@@ -1,1 +1,1 @@
-grainmall谷粒商城
+GRAINMALL
