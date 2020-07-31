@@ -443,3 +443,5 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4TBUaL8w4yIq+NHAhnes5dctUemWr9i3Q4gbg8JvB
 ssh -T git@github.com
 ```
 
+8、IDEA创建Git项目
+https://www.liaoxuefeng.com/wiki/896043488029600/900375748016320
