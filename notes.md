@@ -398,13 +398,13 @@ Path，添加变量值：;%MAVEN_HOME%\bin
 
 ## 9、配置IDEA
 
-1、configure配置maven和jdk
+1、configure配置maven
+
+2、maven配置jdk1.8编译
 
 ![1596195480839](/1596195480839.png)![1596195492134](/1596195492134.png)
 
 2、下载lombok、mybatisx
-
-
 
 ![1596195629030](/1596195629030.png)
 
@@ -443,7 +443,19 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4TBUaL8w4yIq+NHAhnes5dctUemWr9i3Q4gbg8JvB
 ssh -T git@github.com
 ```
 
-## 12、IDEA创建Git项目
+## 12、IDEA创建Git项目，父项目
+
+注意IDEA与maven版本的问题： https://blog.csdn.net/weixin_39723544/article/details/101066414 
+
+idea2018用不了maven3.6，换成3.4
+
+```
+1、创建git项目
+2、pom文件
+3、.gitignore文件
+4、
+```
+
 问题解决：
 https://www.liaoxuefeng.com/wiki/896043488029600/900375748016320
 
@@ -451,11 +463,91 @@ https://www.liaoxuefeng.com/wiki/896043488029600/900375748016320
 
 ![1596205728067](/1596205728067.png)
 
+pom：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.atguigu.gulimall</groupId>
+    <artifactId>gulimall</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>gulimall</name>
+    <description>聚合服务</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>gulimall-coupon</module>
+        <module>gulimall-member</module>
+        <module>gulimall-order</module>
+        <module>gulimall-product</module>
+        <module>gulimall-ware</module>
+    </modules>
+</project>
+
+```
+
+.gitignore：git忽视的文件，不提交
+
+```properties
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+**/mvnw
+**/mvnw.cmd
+**/.mvn
+**/target/
+.idea
+**/.gitignore
+HELP.md
+```
+
+
+
 ## 13、创建微服务
 
-商品服务、仓储服务、订单服务、优惠券服务、用户服务
+```
+1、com.atguigu.gulimall：group
+
+2、gulimall-product：Artifact
+
+3、Description：商品服务
+
+4、package：改一下，去掉gulimall前缀，如下图
+
+5、添加两个组件，springweb，openFeign
+```
 
 
+
+商品服务(product)、仓储服务(ware)、订单服务(order)、优惠券服务(coupon)、会员服务(member)
+
+![1596250594750](/1596250594750.png)
+
+
+
+每个服务的必要两个组件：1、spring web ；2、调用：openFeign
+
+![1596250706998](/1596250706998.png)
+
+![1596250659614](/1596250659614.png)
+
+
+
+## 14、提交
+
+设置.gitignore文件忽视提交的文件
+
+![1596271496331](/1596271496331.png)
 
 ## 14、逆向工程
 
