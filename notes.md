@@ -165,7 +165,7 @@ shop-vue：web的前端
 5、xshell连接，192.168.56.10 -- root + vagrant
 ```
 
-## 4、虚拟机内安装docker
+## 4、安装docker
 
 **简介docker**：虚拟容器技术，docker基于镜像。秒级启动各种容器。每一种容器都是一个完整的运行环境，容器之间互相隔离
 
@@ -344,7 +344,7 @@ vim /mydata/redis/conf/redis.conf
 
 ```
 
-## 8、安装jdk、maven
+## 8、安装jdk、maven【开发】
 
 1、配置环境变量jdk8
 
@@ -443,5 +443,32 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4TBUaL8w4yIq+NHAhnes5dctUemWr9i3Q4gbg8JvB
 ssh -T git@github.com
 ```
 
-8、IDEA创建Git项目
+## 12、IDEA创建Git项目
+问题解决：
 https://www.liaoxuefeng.com/wiki/896043488029600/900375748016320
+
+![1596205718098](/1596205718098.png)
+
+![1596205728067](/1596205728067.png)
+
+## 13、创建微服务
+
+商品服务、仓储服务、订单服务、优惠券服务、用户服务
+
+
+
+## 14、逆向工程
+
+4、逆向工程使用
+1、导入项目逆向工程
+2、下载人人开源后台管理系统脚手架工程
+(1) 导入工程，创建数据库
+(2)修改工程shiro依赖为SpringSecurity
+
+(3)删除部分暂时不需要的业务
+3、下载人人开源后台管理系统vue端脚手架工程
+
+(1)vscode导入前端项目
+
+(2)前后端联调测试基本功能
+
