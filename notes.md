@@ -408,7 +408,7 @@ Path，添加变量值：;%MAVEN_HOME%\bin
 
 ![1596195629030](/1596195629030.png)
 
-## 10、安装+配置vscode
+## 10、配置vscode
 
 1、下载： https://code.visualstudio.com/ 
 
