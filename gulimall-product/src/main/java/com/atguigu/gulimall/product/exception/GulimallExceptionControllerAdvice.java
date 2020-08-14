@@ -34,9 +34,9 @@ public class GulimallExceptionControllerAdvice {
         return R.ok().error(BizCodeEnume.VALID_EXCEPTION.getCode(),BizCodeEnume.VALID_EXCEPTION.getMsg()).put("data", errorMap);
     }
 
-    @ExceptionHandler(value = Throwable.class)
-    public R handleValidException(Throwable throwable) {
-        log.error("Throwable错误，未处理：" + throwable);
-        return R.ok().error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
-    }
+//    @ExceptionHandler(value = Throwable.class)
+//    public R handleValidException(Throwable throwable) {
+//        log.error("Throwable错误，未处理：" + throwable);
+//        return R.ok().error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
+//    }
 }

@@ -4,9 +4,9 @@
     :close-on-click-modal="false"
     :visible.sync="visible">
     <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()" label-width="120px">
-    <el-form-item label="优先级" prop="priority">
-      <el-input v-model="dataForm.priority" placeholder="优先级"></el-input>
-    </el-form-item>
+      <el-form-item label="优先级" prop="priority">
+        <el-input v-model="dataForm.priority" placeholder="优先级"></el-input>
+      </el-form-item>
     </el-form>
     <span slot="footer" class="dialog-footer">
       <el-button @click="visible = false">取消</el-button>
@@ -92,6 +92,8 @@
       },
       // 表单提交
       dataFormSubmit () {
+        console.log(this.dataForm.status);
+        console.log(this.dataForm.amount);
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             this.$http({

@@ -4,10 +4,13 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.ware.entity.PurchaseEntity;
 import com.atguigu.gulimall.ware.service.PurchaseService;
+import com.atguigu.gulimall.ware.vo.MergeVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 // import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -26,6 +29,55 @@ import java.util.Map;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    /**
+     * 06、领取采购单
+     * /ware/purchase/received
+     * 细节不考虑：1、员工只能领取自己的采购单
+     *            2、只能领取没有被自己领取过的采购单
+     */
+    @PostMapping("/received")
+    public R received(@RequestBody List<Long> ids){
+        purchaseService.received(ids);
+
+        return R.ok();
+    }
+
+    /**
+     * 04、合并采购需求
+     *       1）选择了指定的采购欧丹
+     *       2）没有选择，默认创建一个新单
+     * /ware/purchase/merge
+     * 请求参数
+     * {
+     *   purchaseId: 1, //整单id
+     *   items:[1,2,3,4] //合并项集合
+     * }
+     * 响应数据
+     * {
+     * 	"msg": "success",
+     * 	"code": 0
+     * }
+     */
+    @PostMapping("/merge")
+    // @RequiresPermissions("ware:purchase:save")
+    public R merge(@RequestBody MergeVo mergeVo){
+        purchaseService.mergePurchase(mergeVo);
+
+        return R.ok();
+    }
+
+    /**
+     * 05、查询未领取的采购单
+     * /ware/purchase/unreceive/list
+     */
+    @RequestMapping("/unreceive/list")
+    // @RequiresPermissions("ware:purchase:list")
+    public R unreceivelist(@RequestParam Map<String, Object> params){
+        PageUtils page = purchaseService.queryPageUnreceivePurchase(params);
+
+        return R.ok().put("page", page);
+    }
 
     /**
      * 列表
@@ -56,6 +108,8 @@ public class PurchaseController {
     @RequestMapping("/save")
     // @RequiresPermissions("ware:purchase:save")
     public R save(@RequestBody PurchaseEntity purchase){
+        purchase.setCreateTime(new Date());
+        purchase.setUpdateTime(new Date());
 		purchaseService.save(purchase);
 
         return R.ok();

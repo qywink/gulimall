@@ -4,12 +4,18 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.CategoryDao;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
+import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.service.CategoryService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,6 +24,8 @@ import java.util.stream.Collectors;
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
 
+    @Autowired
+    CategoryBrandRelationService categoryBrandRelationService;
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         IPage<CategoryEntity> page = this.page(
@@ -48,10 +56,45 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public void removeMenuByIds(List<Long> asList) {
-        //TODO 1、检查当前副除的菜单，是否被别的地方引用
+        //TODO 1、检查当前删除的菜单，是否被别的地方引用
 
         //逻辑删除
         baseMapper.deleteBatchIds(asList);
+    }
+
+    // [2,25,225]
+    @Override
+    public Long[] findCatelogId(Long catelogId) {
+        List<Long> paths = new ArrayList<>();
+        findParentPath(catelogId, paths);// 递归查询父节点
+        Collections.reverse(paths);// 逆序
+        return paths.toArray(new Long[0]);
+    }
+
+    /**
+     * 级联更新所有关联的数据
+     * @param category
+     */
+    @Transactional
+    @Override
+    public void updateCascade(CategoryEntity category) {
+        this.updateById(category);
+        if (!StringUtils.isEmpty(category.getName())) {
+            categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
+
+            // TODO 更新其他关联
+        }
+    }
+
+    private List<Long> findParentPath(Long catelogId, List<Long> paths) {
+        // 1、收集父ID
+        paths.add(catelogId);
+        // 查库
+        CategoryEntity byId = this.getById(catelogId);
+        if (byId.getParentCid() != 0) {
+            findParentPath(byId.getParentCid(), paths);
+        }
+        return paths;
     }
 
     // 递归给每一个menu设置 children

@@ -1,20 +1,17 @@
 package com.atguigu.gulimall.product.controller;
 
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.utils.R;
+import com.atguigu.gulimall.product.entity.SpuInfoEntity;
+import com.atguigu.gulimall.product.service.SpuInfoService;
+import com.atguigu.gulimall.product.vo.SpuSaveVo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.Arrays;
 import java.util.Map;
 
 // import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.atguigu.gulimall.product.entity.SpuInfoEntity;
-import com.atguigu.gulimall.product.service.SpuInfoService;
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.common.utils.R;
 
 
 
@@ -32,12 +29,12 @@ public class SpuInfoController {
     private SpuInfoService spuInfoService;
 
     /**
-     * 列表
+     * 列表 SPU 检索
      */
     @RequestMapping("/list")
     // @RequiresPermissions("product:spuinfo:list")
     public R list(@RequestParam Map<String, Object> params){
-        PageUtils page = spuInfoService.queryPage(params);
+        PageUtils page = spuInfoService.queryPageByCondition(params);
 
         return R.ok().put("page", page);
     }
@@ -56,12 +53,13 @@ public class SpuInfoController {
 
     /**
      * 保存
+     * 会保存很多信息！
      */
     @RequestMapping("/save")
     // @RequiresPermissions("product:spuinfo:save")
-    public R save(@RequestBody SpuInfoEntity spuInfo){
-		spuInfoService.save(spuInfo);
-
+    public R save(@RequestBody SpuSaveVo vo){
+		//spuInfoService.save(spuInfo);
+        spuInfoService.saveSpuInfo(vo);
         return R.ok();
     }
 
