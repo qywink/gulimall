@@ -5,6 +5,7 @@ import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.ware.entity.PurchaseEntity;
 import com.atguigu.gulimall.ware.service.PurchaseService;
 import com.atguigu.gulimall.ware.vo.MergeVo;
+import com.atguigu.gulimall.ware.vo.PurchaseDoneVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,28 @@ import java.util.Map;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    /**
+     * 07、完成采购
+     * Post * /ware/purchase/done
+     * 请求参数
+     * {
+     *    id: 123,//采购单id
+     *    items: [{itemId:1,status:4,reason:""}]//完成/失败的需求详情
+     * }
+     * 响应数据
+     * {
+     * 	"msg": "success",
+     * 	"code": 0
+     * }
+     */
+    @PostMapping("/done")
+    // @RequiresPermissions("ware:purchase:save")
+    public R finish(@RequestBody PurchaseDoneVo purchaseDoneVo){
+        purchaseService.done(purchaseDoneVo);
+
+        return R.ok();
+    }
 
     /**
      * 06、领取采购单

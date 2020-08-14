@@ -8,7 +8,10 @@ import com.atguigu.gulimall.ware.entity.PurchaseDetailEntity;
 import com.atguigu.gulimall.ware.entity.PurchaseEntity;
 import com.atguigu.gulimall.ware.service.PurchaseDetailService;
 import com.atguigu.gulimall.ware.service.PurchaseService;
+import com.atguigu.gulimall.ware.service.WareSkuService;
 import com.atguigu.gulimall.ware.vo.MergeVo;
+import com.atguigu.gulimall.ware.vo.PurchaseDoneVo;
+import com.atguigu.gulimall.ware.vo.PurchaseItemDoneVo;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,8 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
 
     @Autowired
     PurchaseDetailService purchaseDetailService;
+    @Autowired
+    WareSkuService wareSkuService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -62,7 +68,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Transactional
     @Override
     public void mergePurchase(MergeVo mergeVo) {
-        // 只有采购需求的状态必须是 新建、已分配 才可以合并
+        // TODO 采购需求的状态必须是 新建、已分配 才可以合并
         boolean isMerge = true;
         List<Long> items = mergeVo.getItems();
         if (!CollectionUtils.isEmpty(items)) {
@@ -118,7 +124,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Override
     public void received(List<Long> ids) {
         // 1、修改所有采购单的状态为 "已领取"
-        // 1.1）过滤采购单【必须是新建或者已分配的采购单】
+        // 1.1）过滤采购单【必须是新建或者已分配的采购单】，保存采购单修改时间
         List<PurchaseEntity> collect = ids.stream().map(id -> {
             PurchaseEntity purchaseEntity = this.getById(id);
             return purchaseEntity;
@@ -151,5 +157,41 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
             }).collect(Collectors.toList());
             purchaseDetailService.updateBatchById(purchaseDetailEntities);
         });
+    }
+
+    /**
+     * 完成采购
+     */
+    @Transactional
+    @Override
+    public void done(PurchaseDoneVo doneVo) {
+        // 2、改变采购需求的状态
+        Boolean flag = true;
+        List<PurchaseItemDoneVo> items = doneVo.getItems();
+        List<PurchaseDetailEntity> updates = new ArrayList<>();
+        for (PurchaseItemDoneVo item : items) {
+            PurchaseDetailEntity detailEntity= new PurchaseDetailEntity();
+            // 设置状态：成功或失败
+            detailEntity.setStatus(item.getStatus());
+            // 优化，下面只需要执行一次
+            if (flag && item.getStatus() == WareConstant.PurchaseDetailStatusEnum.HASERROR.getCode()) {
+                flag = false;
+            }else {
+                // 3、将成功采购的进行入库 [三个参数：sku_id，ware_id，stock]
+                // 根据采购需求id获取采购需求详情，获得sku_id
+                PurchaseDetailEntity entity = purchaseDetailService.getById(item.getItemId());
+                wareSkuService.addStock(entity.getSkuId(), entity.getWareId(), entity.getSkuNum());
+            }
+            // TODO 采购失败待完善，应采购数量10，实际采购数量8
+            detailEntity.setId(item.getItemId());
+            updates.add(detailEntity);
+        }
+        purchaseDetailService.updateBatchById(updates);
+
+        // 1、改变采购单状态【如果存在失败的采购项，采购单状态异常】
+        PurchaseEntity purchaseEntity = new PurchaseEntity();
+        purchaseEntity.setId(doneVo.getId());
+        purchaseEntity.setStatus(flag ? WareConstant.PurchaseStatusEnum.FINISH.getCode() : WareConstant.PurchaseStatusEnum.HASERROR.getCode());
+        this.updateById(purchaseEntity);
     }
 }
