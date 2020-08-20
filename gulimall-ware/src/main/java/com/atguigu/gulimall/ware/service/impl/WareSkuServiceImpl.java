@@ -7,6 +7,7 @@ import com.atguigu.gulimall.ware.dao.WareSkuDao;
 import com.atguigu.gulimall.ware.entity.WareSkuEntity;
 import com.atguigu.gulimall.ware.feign.ProductFeignService;
 import com.atguigu.gulimall.ware.service.WareSkuService;
+import com.atguigu.gulimall.ware.vo.SkuHasStockVo;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,6 +18,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service("wareSkuService")
@@ -56,6 +58,8 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
 
     /**
      * 成功采购=》入库
+     * 1、如果有库存记录，直接加库存
+     * 2、如果没有库存记录，添加一条记录，并且设置锁定为0
      */
     @Override
     public void addStock(Long skuId, Long wareId, Integer skuNum) {
@@ -86,5 +90,22 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
         }else {
             wareSkuDao.addStock(skuId, wareId, skuNum);
         }
+    }
+
+    /**
+     *  检查sku 是否有库存
+     */
+    @Override
+    public List<SkuHasStockVo> getSkusHasStock(List<Long> skuIds) {
+        List<SkuHasStockVo> vos = skuIds.stream().map(skuId -> {
+            SkuHasStockVo vo = new SkuHasStockVo();
+            // 1、不止一个仓库有，多个仓库都有库存 sum
+            // 2、锁定库存是别人下单但是还没下完
+            Long count = baseMapper.getSkuStock(skuId);
+            vo.setSkuId(skuId);
+            vo.setHasStock(count == null ? false : count > 0);
+            return vo;
+        }).collect(Collectors.toList());
+        return vos;
     }
 }

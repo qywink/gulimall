@@ -180,15 +180,18 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
                 // 3、将成功采购的进行入库 [三个参数：sku_id，ware_id，stock]
                 // 根据采购需求id获取采购需求详情，获得sku_id
                 PurchaseDetailEntity entity = purchaseDetailService.getById(item.getItemId());
+                // 成功的采购需求，把库存加上去【这里要设置下锁定库存的数量为0，如果是新增库存记录】
+                // 这里并不修改整个entity字段，只修改这三个字段是对的
                 wareSkuService.addStock(entity.getSkuId(), entity.getWareId(), entity.getSkuNum());
             }
             // TODO 采购失败待完善，应采购数量10，实际采购数量8
+            // 采购需求的状态【可能是成功，或失败，采购员提交】
             detailEntity.setId(item.getItemId());
             updates.add(detailEntity);
         }
         purchaseDetailService.updateBatchById(updates);
 
-        // 1、改变采购单状态【如果存在失败的采购项，采购单状态异常】
+        // 1、改变采购单状态【如果存在失败的采购项(采购需求)，采购单状态异常】
         PurchaseEntity purchaseEntity = new PurchaseEntity();
         purchaseEntity.setId(doneVo.getId());
         purchaseEntity.setStatus(flag ? WareConstant.PurchaseStatusEnum.FINISH.getCode() : WareConstant.PurchaseStatusEnum.HASERROR.getCode());

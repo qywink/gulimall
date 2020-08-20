@@ -20,7 +20,7 @@ spring:
       - id: product_route
         uri: lb://gulimall-product
         predicates:
-        - Path=/api/product/**
+        - Path=/api/product/**,/hello
         filters:
         - RewritePath=/api/(?<segment>.*),/$\{segment}
 
@@ -38,6 +38,13 @@ spring:
         filters:
         - RewritePath=/api/(?<segment>.*),/$\{segment}
 
+#      - id: search_route
+#        uri: lb://gulimall-search
+#        predicates:
+#        - Path=/api/search/**
+#        filters:
+#        - RewritePath=/api/search/(?<segment>.*),/$\{segment}
+
       - id: third_party_route
         uri: lb://gulimall-third-party
         predicates:
@@ -52,6 +59,15 @@ spring:
         filters:
         - RewritePath=/api/(?<segment>.*),/renren-fast/$\{segment}
 
+      - id: gulimall_host_route
+        uri: lb://gulimall-product
+        predicates:
+        - Host=gulimall.com
+
+      - id: gulimall_search_route
+        uri: lb://gulimall-search
+        predicates:
+        - Host=search.gulimall.com
 
   # 按照规则，url=baidu则转发到www.baidu.com；并且Query断言可以是正则表达式
   # http://localhost:88/hello?url=qq 解析：1、按照规则转发到https://www.qq.com/hello

@@ -1,13 +1,19 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.constant.ProductConstant;
+import com.atguigu.common.to.SkuHasStockTo;
 import com.atguigu.common.to.SkuReductionTo;
 import com.atguigu.common.to.SpuBoundTo;
+import com.atguigu.common.to.es.SkuEsModel;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.dao.SpuInfoDao;
 import com.atguigu.gulimall.product.entity.*;
 import com.atguigu.gulimall.product.feign.CouponFeignService;
+import com.atguigu.gulimall.product.feign.SearchFeignService;
+import com.atguigu.gulimall.product.feign.WareFeignService;
 import com.atguigu.gulimall.product.service.*;
 import com.atguigu.gulimall.product.vo.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -20,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,6 +52,14 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
     SkuSaleAttrValueService skuSaleAttrValueService;
     @Autowired
     CouponFeignService couponFeignService;
+    @Autowired
+    BrandService brandService;
+    @Autowired
+    CategoryService categoryService;
+    @Autowired
+    WareFeignService wareFeignService;
+    @Autowired
+    SearchFeignService searchFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -226,5 +240,112 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
                 queryWrapper
         );
         return new PageUtils(page);
+    }
+
+    /**
+     * 商品上架【spu商品上架，会上架所有sku商品到es，以skuId作为文档id】
+     */
+    @Override
+    public void up(Long spuId) {
+        // sku的属性是继承spu的，一个商品下不同的sku，其基本属性是相同的，销售属性不同
+        // TODO 4、查询所有sku可以被用来检索 的规格属性
+        // 1、根据spuId获取所有Attr，过滤掉不可检索的Attr
+        List<ProductAttrValueEntity> baseAttrs = valueService.baseAttrlistforspu(spuId);
+        // 2、将结果包装成AttrId集合
+        List<Long> attrIds = baseAttrs.stream().map(attr -> {
+            return attr.getAttrId();
+        }).collect(Collectors.toList());
+        // 3、获取所有可检索的AttrId集合，包装成set
+        List<Long> searchAttrIds = attrService.selectSearchAttrIds(attrIds);
+        HashSet<Long> idSet = new HashSet<>(searchAttrIds);
+        // 4、将所有Attr根据set过滤并包装成List<SkuEsModel.Attrs>，最终存入es
+        List<SkuEsModel.Attrs> attrsList = baseAttrs.stream().filter(item -> {
+            return idSet.contains(item.getAttrId());
+        }).map(item -> {
+            SkuEsModel.Attrs attrs = new SkuEsModel.Attrs();
+            BeanUtils.copyProperties(item, attrs);
+            return attrs;
+        }).collect(Collectors.toList());
+
+        // 6、查出当前spuId对应的所有sku商品信息
+        List<SkuInfoEntity> skus = skuInfoService.getSkusBySpuId(spuId);
+        // 7、包装所有skuId
+        List<Long> skuIds = skus.stream().map(SkuInfoEntity::getSkuId).collect(Collectors.toList());
+        // TODO 1、发送远程调用查询库存是否有
+        // 8、库存信息，如果为null，库存为true
+        Map<Long, Boolean> stockMap = null;
+        try {
+            // 9、远程调用，获取所有sku的库存信息
+            R r = wareFeignService.getSkusHasStock(skuIds);
+            // 10、返回数据泛型，受保护的构造器，使用匿名内部类
+            TypeReference<List<SkuHasStockTo>> typeReference = new TypeReference<List<SkuHasStockTo>>() {
+            };
+            // 11、封装，skuId为key，hasStock为值
+            stockMap = r.getData(typeReference).stream().collect(Collectors.toMap(SkuHasStockTo::getSkuId, item -> item.getHasStock()));
+        }catch (Exception e){
+            log.error("库存服务查询异常：原因{}", e);
+        }
+        Map<Long, Boolean> finalStockMap = stockMap;
+        // 12、封装每个sku的信息，List<SkuEsModel>保存到es
+        List<SkuEsModel> upProducts = skus.stream().map(sku -> {
+            SkuEsModel esModel = new SkuEsModel();
+            BeanUtils.copyProperties(sku, esModel);
+            // 单独处理的数据：
+            // skuPrice, skuImg, hasstock, hotScore,
+            esModel.setSkuPrice(sku.getPrice());
+            esModel.setSkuImg(sku.getSkuDefaultImg());
+            // 库存为null【远程调用失败，默认为true】
+            if (finalStockMap == null) {
+                esModel.setHasStock(true);
+            }else {
+                esModel.setHasStock(finalStockMap.get(sku.getSkuId()));
+            }
+            // TODO 2、热度评分。0
+            esModel.setHotScore(0l);
+            // TODO 3、查询品牌和分类的名字
+            BrandEntity brand = brandService.getById(esModel.getBrandId());
+            esModel.setBrandName(brand.getName());
+            esModel.setBrandImg(brand.getLogo());
+
+            CategoryEntity category = categoryService.getById(esModel.getCatalogId());
+            esModel.setCatalogName(category.getName());
+            // 设置检索属性：冗余信息，spu规格，sku共用
+            esModel.setAttrs(attrsList);
+            return esModel;
+        }).collect(Collectors.toList());
+
+        // TODO 5、将数据发送给es进行保存：gulimall-search
+        R r = searchFeignService.productStatusUp(upProducts);
+        if (r.getCode() == 0) {
+            // 远程调用成功
+            // TODO 6、修改当前spu的状态 上架
+            baseMapper.updateSpuStatus(spuId, ProductConstant.StatusEnum.SPU_UP.getCode());
+        }else {
+            // 远程调用失败
+            // TODO 7、重复调用？接口幂等性：重试机制？
+            //Feign调用流程
+            /**
+             * 1、构造请求数据，将对象转为json
+             *      RequestTemplate template = buildTemplateFromArgs.create(argv);
+             * 2、发送请求进行执行：【执行成功会解码响应数据】
+             *      excuteAndDecode(template)
+             * 3、执行请求会有重试机制
+             *      while(true){
+             *          try{
+             *              excuteAndDecode(template)
+             *          }catch() {
+             *              try{
+             *                  // 默认重试5次，也有不重试
+             *                  retryer.continueOrPropagate(e);
+             *               }catch() {
+             *                  throw ex;
+             *               }
+             *              continue;
+             *          }
+             *      }
+             *
+             *
+             */
+        }
     }
 }

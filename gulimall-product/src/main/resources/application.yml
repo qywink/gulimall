@@ -15,8 +15,28 @@
 #  jackson:
 #    date-format: yyyy-MM-dd HH:mm:ss
 #    time-zone: GMT+8
+#  thymeleaf:
+#    cache: false
+#  redis:
+#    host: 192.168.56.10
+#    port: 6379
+#  cache:
+#    type: redis
+#    redis:
+#      time-to-live: 3600s
+#      key-prefix: CACHE_
+#      use-key-prefix: true
+#      cache-null-values: true
+#
 #mybatis-plus:
 #  mapper-locations: classpath:/mapper/**/*.xml
 #  global-config:
 #    db-config:
 #      id-type: auto
+#      # logic-delete-field: showStatus  # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+#      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+#      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+#
+#logging:
+#  level:
+#    com.atguigu.gulimall: error
