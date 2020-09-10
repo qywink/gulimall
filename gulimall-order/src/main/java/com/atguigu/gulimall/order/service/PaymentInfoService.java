@@ -9,9 +9,6 @@ import java.util.Map;
 /**
  * 支付信息表
  *
- * @author wanzenghui
- * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:28:33
  */
 public interface PaymentInfoService extends IService<PaymentInfoEntity> {
 

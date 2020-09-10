@@ -1,0 +1,2 @@
+[2020/09/01 16:06:55 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [pxy:21bf4629] Server failed to write StartProxy: unexpected end of JSON input
+[2020/09/01 16:06:55 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure unexpected end of JSON input

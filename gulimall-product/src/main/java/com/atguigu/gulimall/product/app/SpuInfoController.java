@@ -96,4 +96,17 @@ public class SpuInfoController {
 
         return R.ok();
     }
+
+    /**
+     * 提交订单，远程接口
+     * 根据skuId查询spu的信息
+     */
+    @GetMapping(value = "/skuId/{skuId}")
+    public R getSpuInfoBySkuId(@PathVariable("skuId") Long skuId) {
+
+        SpuInfoEntity spuInfoEntity = spuInfoService.getSpuInfoBySkuId(skuId);
+
+        return R.ok().setData(spuInfoEntity);
+    }
+
 }

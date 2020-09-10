@@ -12,6 +12,14 @@ spring:
         server-addr: 127.0.0.1:8848
   application:
     name: gulimall-member
+  redis:
+    port: 6379
+    host: 192.168.56.10
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+  session:
+    store-type: redis
+
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:

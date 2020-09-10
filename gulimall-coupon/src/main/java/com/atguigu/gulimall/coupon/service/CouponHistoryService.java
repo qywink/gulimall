@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 14:35:18
+ *
  */
 public interface CouponHistoryService extends IService<CouponHistoryEntity> {
 

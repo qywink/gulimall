@@ -1,5 +1,6 @@
 package com.atguigu.gulimall.order.controller;
 
+
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.order.entity.OrderEntity;
@@ -10,16 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.Map;
 
-// import org.apache.shiro.authz.annotation.RequiresPermissions;
-
 
 
 /**
  * 订单
- *
- * @author wanzenghui
- * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:28:33
  */
 @RestController
 @RequestMapping("order/order")
@@ -28,12 +23,35 @@ public class OrderController {
     private OrderService orderService;
 
     /**
+     * 根据订单编号查询订单状态
+     * @param orderSn
+     * @return
+     */
+    @GetMapping(value = "/status/{orderSn}")
+    public R getOrderStatus(@PathVariable("orderSn") String orderSn) {
+        OrderEntity orderEntity = orderService.getOrderByOrderSn(orderSn);
+        return R.ok().setData(orderEntity);
+    }
+
+    /**
      * 列表
      */
     @RequestMapping("/list")
-    // @RequiresPermissions("order:order:list")
-    public R list(@RequestParam Map<String, Object> params){
+    //@RequiresPermissions("order:order:list")
+    public R list(Map<String, Object> params){
+
         PageUtils page = orderService.queryPage(params);
+
+        return R.ok().put("page", page);
+    }
+
+    /**
+     * member远程调用：分页查询当前登录用户的所有订单信息
+     */
+    @PostMapping("/listWithItem")
+    //@RequiresPermissions("order:order:list")
+    public R listWithItem(@RequestBody Map<String, Object> params){
+        PageUtils page = orderService.queryPageWithItem(params);
 
         return R.ok().put("page", page);
     }
@@ -43,7 +61,7 @@ public class OrderController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    // @RequiresPermissions("order:order:info")
+    //@RequiresPermissions("order:order:info")
     public R info(@PathVariable("id") Long id){
 		OrderEntity order = orderService.getById(id);
 
@@ -54,7 +72,7 @@ public class OrderController {
      * 保存
      */
     @RequestMapping("/save")
-    // @RequiresPermissions("order:order:save")
+    //@RequiresPermissions("order:order:save")
     public R save(@RequestBody OrderEntity order){
 		orderService.save(order);
 
@@ -65,7 +83,7 @@ public class OrderController {
      * 修改
      */
     @RequestMapping("/update")
-    // @RequiresPermissions("order:order:update")
+    //@RequiresPermissions("order:order:update")
     public R update(@RequestBody OrderEntity order){
 		orderService.updateById(order);
 
@@ -76,7 +94,7 @@ public class OrderController {
      * 删除
      */
     @RequestMapping("/delete")
-    // @RequiresPermissions("order:order:delete")
+    //@RequiresPermissions("order:order:delete")
     public R delete(@RequestBody Long[] ids){
 		orderService.removeByIds(Arrays.asList(ids));
 

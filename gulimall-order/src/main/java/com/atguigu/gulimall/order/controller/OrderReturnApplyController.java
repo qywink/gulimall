@@ -1,29 +1,20 @@
 package com.atguigu.gulimall.order.controller;
 
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.utils.R;
+import com.atguigu.gulimall.order.entity.OrderReturnApplyEntity;
+import com.atguigu.gulimall.order.service.OrderReturnApplyService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.Arrays;
 import java.util.Map;
 
-// import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.atguigu.gulimall.order.entity.OrderReturnApplyEntity;
-import com.atguigu.gulimall.order.service.OrderReturnApplyService;
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.common.utils.R;
 
 
 
 /**
  * 订单退货申请
- *
- * @author wanzenghui
- * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:28:33
  */
 @RestController
 @RequestMapping("order/orderreturnapply")
@@ -35,7 +26,7 @@ public class OrderReturnApplyController {
      * 列表
      */
     @RequestMapping("/list")
-    // @RequiresPermissions("order:orderreturnapply:list")
+    //@RequiresPermissions("order:orderreturnapply:list")
     public R list(@RequestParam Map<String, Object> params){
         PageUtils page = orderReturnApplyService.queryPage(params);
 
@@ -47,7 +38,7 @@ public class OrderReturnApplyController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    // @RequiresPermissions("order:orderreturnapply:info")
+    //@RequiresPermissions("order:orderreturnapply:info")
     public R info(@PathVariable("id") Long id){
 		OrderReturnApplyEntity orderReturnApply = orderReturnApplyService.getById(id);
 
@@ -58,7 +49,7 @@ public class OrderReturnApplyController {
      * 保存
      */
     @RequestMapping("/save")
-    // @RequiresPermissions("order:orderreturnapply:save")
+    //@RequiresPermissions("order:orderreturnapply:save")
     public R save(@RequestBody OrderReturnApplyEntity orderReturnApply){
 		orderReturnApplyService.save(orderReturnApply);
 
@@ -69,7 +60,7 @@ public class OrderReturnApplyController {
      * 修改
      */
     @RequestMapping("/update")
-    // @RequiresPermissions("order:orderreturnapply:update")
+    //@RequiresPermissions("order:orderreturnapply:update")
     public R update(@RequestBody OrderReturnApplyEntity orderReturnApply){
 		orderReturnApplyService.updateById(orderReturnApply);
 
@@ -80,7 +71,7 @@ public class OrderReturnApplyController {
      * 删除
      */
     @RequestMapping("/delete")
-    // @RequiresPermissions("order:orderreturnapply:delete")
+    //@RequiresPermissions("order:orderreturnapply:delete")
     public R delete(@RequestBody Long[] ids){
 		orderReturnApplyService.removeByIds(Arrays.asList(ids));
 

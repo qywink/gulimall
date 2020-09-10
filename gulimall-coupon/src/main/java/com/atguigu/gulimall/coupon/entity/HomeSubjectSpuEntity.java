@@ -2,17 +2,16 @@ package com.atguigu.gulimall.coupon.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
-import lombok.Data;
 
 /**
  * 专题商品
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 14:35:18
+ *
  */
 @Data
 @TableName("sms_home_subject_spu")

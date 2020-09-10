@@ -2,18 +2,14 @@ package com.atguigu.gulimall.order.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-
-import java.math.BigDecimal;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * 订单项信息
- * 
- * @author wanzenghui
- * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:28:33
+ *
  */
 @Data
 @TableName("oms_order_item")

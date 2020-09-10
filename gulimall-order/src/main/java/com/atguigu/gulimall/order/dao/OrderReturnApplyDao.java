@@ -6,10 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 订单退货申请
- * 
- * @author wanzenghui
- * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:28:33
  */
 @Mapper
 public interface OrderReturnApplyDao extends BaseMapper<OrderReturnApplyEntity> {

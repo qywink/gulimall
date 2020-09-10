@@ -23,10 +23,15 @@
 #  cache:
 #    type: redis
 #    redis:
+#      # 存活时间
 #      time-to-live: 3600s
 #      key-prefix: CACHE_
+#      # 可以使用前缀
 #      use-key-prefix: true
+#      # 防止缓存穿透，可缓存null值
 #      cache-null-values: true
+#  session:
+#    store-type: redis
 #
 #mybatis-plus:
 #  mapper-locations: classpath:/mapper/**/*.xml
@@ -40,3 +45,9 @@
 #logging:
 #  level:
 #    com.atguigu.gulimall: error
+#
+#gulimall:
+#  thread:
+#    core-size: 20
+#    max-size: 200
+#    keep-alive-time: 10

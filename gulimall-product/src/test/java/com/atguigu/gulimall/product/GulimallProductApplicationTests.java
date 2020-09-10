@@ -2,6 +2,7 @@ package com.atguigu.gulimall.product;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.atguigu.gulimall.product.dao.AttrGroupDao;
 import com.atguigu.gulimall.product.entity.BrandEntity;
 import com.atguigu.gulimall.product.service.BrandService;
 import com.atguigu.gulimall.product.service.CategoryService;
@@ -38,6 +39,16 @@ class GulimallProductApplicationTests {
 
     @Autowired
     StringRedisTemplate redisTemplate;
+
+    @Autowired
+    AttrGroupDao attrGroupDao;
+
+    @Test
+    void testGetAttrGroupWithAttrsBySpuId() {
+        attrGroupDao.getAttrGroupWithAttrsBySpuId(4L, 225L).forEach(item->
+                System.out.println(item));
+    }
+
 
     @Test
     void testRedisson() {

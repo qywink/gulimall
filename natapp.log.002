@@ -1,0 +1,4 @@
+[2020/09/01 13:56:25 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [pxy:16c6fbd1] Server failed to write StartProxy: unexpected end of JSON input
+[2020/09/01 16:06:13 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [pxy:6351da39] Server failed to write StartProxy: unexpected end of JSON input
+[2020/09/01 16:06:13 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure unexpected end of JSON input
+[2020/09/01 16:06:23 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [ctl:7938e361] Got error tls: use of closed connection when writing PingMsg

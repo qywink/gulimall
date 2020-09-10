@@ -5,10 +5,18 @@ import lombok.Data;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
+/**
+ * @Description:
+ * @Created: with IntelliJ IDEA.
+ * @author: wanzenghui
+ **/
+
 @Data
 public class PurchaseDoneVo {
 
-    @NotNull
-    private Long id;// 采购单id
-    private List<PurchaseItemDoneVo> items;// 需求详情
+    @NotNull(message = "id不允许为空")
+    private Long id;
+
+    private List<PurchaseItemDoneVo> items;
+
 }

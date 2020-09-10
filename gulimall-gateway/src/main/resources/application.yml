@@ -24,6 +24,13 @@ spring:
         filters:
         - RewritePath=/api/(?<segment>.*),/$\{segment}
 
+      - id: coupon_route
+        uri: lb://gulimall-coupon
+        predicates:
+        - Path=/api/coupon/**
+        filters:
+        - RewritePath=/api/(?<segment>.*),/$\{segment}
+
       - id: member_route
         uri: lb://gulimall-member
         predicates:
@@ -38,12 +45,12 @@ spring:
         filters:
         - RewritePath=/api/(?<segment>.*),/$\{segment}
 
-#      - id: search_route
-#        uri: lb://gulimall-search
-#        predicates:
-#        - Path=/api/search/**
-#        filters:
-#        - RewritePath=/api/search/(?<segment>.*),/$\{segment}
+      #      - id: search_route
+      #        uri: lb://gulimall-search
+      #        predicates:
+      #        - Path=/api/search/**
+      #        filters:
+      #        - RewritePath=/api/search/(?<segment>.*),/$\{segment}
 
       - id: third_party_route
         uri: lb://gulimall-third-party
@@ -62,12 +69,37 @@ spring:
       - id: gulimall_host_route
         uri: lb://gulimall-product
         predicates:
-        - Host=gulimall.com
+        - Host=gulimall.com,item.gulimall.com
 
       - id: gulimall_search_route
         uri: lb://gulimall-search
         predicates:
         - Host=search.gulimall.com
+
+      - id: gulimall_auth_route
+        uri: lb://gulimall-auth-server
+        predicates:
+        - Host=auth.gulimall.com
+
+      - id: gulimall_cart_route
+        uri: lb://gulimall-cart
+        predicates:
+        - Host=cart.gulimall.com
+
+      - id: gulimall_order_route
+        uri: lb://gulimall-order
+        predicates:
+        - Host=order.gulimall.com
+
+      - id: gulimall_member_route
+        uri: lb://gulimall-member
+        predicates:
+        - Host=member.gulimall.com
+
+      - id: gulimall_seckill_route
+        uri: lb://gulimall-seckill
+        predicates:
+        - Host=seckill.gulimall.com
 
   # 按照规则，url=baidu则转发到www.baidu.com；并且Query断言可以是正则表达式
   # http://localhost:88/hello?url=qq 解析：1、按照规则转发到https://www.qq.com/hello

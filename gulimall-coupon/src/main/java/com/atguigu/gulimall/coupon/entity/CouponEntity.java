@@ -13,7 +13,7 @@ import java.util.Date;
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 14:35:18
+ *
  */
 @Data
 @TableName("sms_coupon")
