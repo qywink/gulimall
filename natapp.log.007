@@ -1,9 +1,0 @@
-[2020/09/06 20:46:25 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [ctl:5c368b2b] Got error write tcp 192.168.0.107:58809->112.74.89.58:443: wsasend: An existing connection was forcibly closed by the remote host. when writing PingMsg
-[2020/09/06 20:46:25 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [pxy:95bb65c] Server failed to write StartProxy: read tcp 192.168.0.107:58810->112.74.89.58:443: wsarecv: An established connection was aborted by the software in your host machine.
-[2020/09/06 20:46:25 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure read tcp 192.168.0.107:58809->112.74.89.58:443: wsarecv: An established connection was aborted by the software in your host machine.
-[2020/09/06 20:46:26 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure dial tcp: lookup server.natappfree.cc: no such host
-[2020/09/06 20:46:28 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure dial tcp: lookup server.natappfree.cc: no such host
-[2020/09/06 21:56:00 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure dial tcp: lookup server.natappfree.cc: no such host
-[2020/09/07 00:52:24 CST] [EROR] (natapp/src/log.Error:120) control recovering from failure unexpected end of JSON input
-[2020/09/07 00:52:24 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [pxy:1e0ecc33] Server failed to write StartProxy: unexpected end of JSON input
-[2020/09/07 00:52:28 CST] [EROR] (natapp/src/log.(*PrefixLogger).Error:91) [ctl:6b2d8ca3] Got error tls: use of closed connection when writing PingMsg

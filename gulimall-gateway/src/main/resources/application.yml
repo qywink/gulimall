@@ -108,6 +108,3 @@ spring:
   ##前端项目，/api
   ##http://LocaLhost:88/api/captcha.jpg                 http://Localhost:8080/renren-fast/captcha.jpg
   ##http://LocaLhost:88/api/product/category/list/tree  http://Localhost:10000/product/category/list/tree
-
-  application:
-    name: gulimall-gateway
