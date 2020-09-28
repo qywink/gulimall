@@ -3,6 +3,7 @@ package com.atguigu.gulimall.seckill.config;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,10 +23,10 @@ public class MyRedissonConfig {
      * 所有对Redisson的使用都是通过RedissonClient
      */
     @Bean(destroyMethod="shutdown")
-    public RedissonClient redissonClient() throws IOException {
+    public RedissonClient redissonClient(@Value("spring.redis.host")String host) throws IOException {
         //1、创建配置
         Config config = new Config();
-        config.useSingleServer().setAddress("redis://192.168.56.10:6379");
+        config.useSingleServer().setAddress("redis://" + host + ":6379");
 
         //2、根据Config创建出RedissonClient实例
         //Redis url should start with redis:// or rediss://

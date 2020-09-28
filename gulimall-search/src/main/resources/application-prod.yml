@@ -1,6 +1,7 @@
 server:
   port: 8080
-
+elasticsearch:
+  host: elasticsearch.gulimall
 spring:
   application:
     name: gulimall-search

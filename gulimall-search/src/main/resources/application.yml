@@ -1,6 +1,7 @@
 server:
   port: 12000
-
+elasticsearch:
+  host: 192.168.56.10
 spring:
   application:
     name: gulimall-search
