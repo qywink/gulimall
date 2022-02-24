@@ -1,12 +1,12 @@
 package com.atguigu.gulimall.member.service;
 
+import com.atguigu.common.to.member.MemberUserLoginTO;
+import com.atguigu.common.to.member.MemberUserRegisterTO;
+import com.atguigu.common.to.member.WBSocialUserTO;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.gulimall.member.entity.MemberEntity;
 import com.atguigu.gulimall.member.exception.PhoneException;
 import com.atguigu.gulimall.member.exception.UsernameException;
-import com.atguigu.gulimall.member.vo.MemberUserLoginVo;
-import com.atguigu.gulimall.member.vo.MemberUserRegisterVo;
-import com.atguigu.gulimall.member.vo.SocialUser;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.Map;
@@ -16,49 +16,35 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:18:09
+ * @date 2021-09-02 22:56:37
  */
 public interface MemberService extends IService<MemberEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
 
     /**
-     * 用户注册
-     * @param vo
+     * 注册
      */
-    void register(MemberUserRegisterVo vo);
+    void regist(MemberUserRegisterTO user) throws InterruptedException;
 
     /**
-     * 判断邮箱是否重复
-     * @param phone
-     * @return
+     * 校验手机号是否唯一
      */
     void checkPhoneUnique(String phone) throws PhoneException;
 
     /**
-     * 判断用户名是否重复
-     * @param userName
-     * @return
+     * 校验用户名是否唯一
      */
     void checkUserNameUnique(String userName) throws UsernameException;
 
     /**
-     * 用户登录
+     * 登录
      */
-    MemberEntity login(MemberUserLoginVo vo);
+    MemberEntity login(MemberUserLoginTO user);
 
     /**
-     * 社交用户的登录
-     * @param socialUser
-     * @return
+     * 微博社交登录（登录和注册功能合并）
      */
-    MemberEntity login(SocialUser socialUser) throws Exception;
-
-//    /**
-//     * 微信登录
-//     * @param accessTokenInfo
-//     * @return
-//     */
-//    MemberEntity login(String accessTokenInfo);
+    MemberEntity login(WBSocialUserTO user) throws Exception;
 }
 

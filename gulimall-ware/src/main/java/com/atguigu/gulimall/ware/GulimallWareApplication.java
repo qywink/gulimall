@@ -6,10 +6,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
+// 开启rabbit
 @EnableRabbit
-@EnableFeignClients
-@SpringBootApplication
+// 开启feign
+@EnableFeignClients(basePackages = "com.atguigu.gulimall.ware.feign")
+// 开启服务注册功能
 @EnableDiscoveryClient
+@SpringBootApplication
 public class GulimallWareApplication {
 
     public static void main(String[] args) {

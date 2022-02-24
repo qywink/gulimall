@@ -14,7 +14,7 @@ import java.util.List;
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 @Data
 @TableName("sms_seckill_session")
@@ -46,7 +46,9 @@ public class SeckillSessionEntity implements Serializable {
 	 * 创建时间
 	 */
 	private Date createTime;
-
+	/**
+	 * 关联的商品信息
+	 */
 	@TableField(exist = false)
 	private List<SeckillSkuRelationEntity> relationSkus;
 

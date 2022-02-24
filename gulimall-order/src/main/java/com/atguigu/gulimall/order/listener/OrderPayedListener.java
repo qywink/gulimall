@@ -1,19 +1,17 @@
 package com.atguigu.gulimall.order.listener;
 
 import com.alipay.api.AlipayApiException;
-import com.alipay.api.internal.util.AlipaySignature;
-import com.atguigu.gulimall.order.config.AlipayTemplate;
+import com.atguigu.common.constant.order.PaymentConstant.PayType;
+import com.atguigu.common.vo.order.alipay.AliPayAsyncVO;
+import com.atguigu.gulimall.order.config.AliPayConfig;
 import com.atguigu.gulimall.order.service.OrderService;
-import com.atguigu.gulimall.order.vo.PayAsyncVo;
+import com.atguigu.gulimall.order.service.impl.PayContextStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 订单支付成功监听器
@@ -23,48 +21,28 @@ import java.util.Map;
 public class OrderPayedListener {
 
     @Autowired
-    private OrderService orderService;
+    PayContextStrategy payContextStrategy;
 
-    @Autowired
-    private AlipayTemplate alipayTemplate;
-
-    @PostMapping(value = "/payed/notify")
-    public String handleAlipayed(PayAsyncVo asyncVo, HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
-        // 只要收到支付宝的异步通知，返回 success 支付宝便不再通知
-        // 获取支付宝POST过来反馈信息
-        //TODO 需要验签
-        Map<String, String> params = new HashMap<>();
-        Map<String, String[]> requestParams = request.getParameterMap();
-        for (String name : requestParams.keySet()) {
-            String[] values = requestParams.get(name);
-            String valueStr = "";
-            for (int i = 0; i < values.length; i++) {
-                valueStr = (i == values.length - 1) ? valueStr + values[i]
-                        : valueStr + values[i] + ",";
-            }
-            //乱码解决，这段代码在出现乱码时使用
-            // valueStr = new String(valueStr.getBytes("ISO-8859-1"), "utf-8");
-            params.put(name, valueStr);
+    /**
+     * 支付宝支付异步通知
+     * 只有支付成功会触发
+     * @param request
+     * @param asyncVo
+     */
+    @PostMapping(value = "/payed/ali/notify")
+    public String handleAliNotify(HttpServletRequest request, AliPayAsyncVO asyncVo) throws AlipayApiException, UnsupportedEncodingException {
+        asyncVo.setPayCode(PayType.ALI_PAY.getCode());// 封装付款类型
+        Boolean result = payContextStrategy.notify(PayType.ALI_PAY, request, asyncVo);
+        if (result) {
+            return "success";// 返回success，支付宝将不再异步回调
         }
-
-        boolean signVerified = AlipaySignature.rsaCheckV1(params, alipayTemplate.getAlipay_public_key(),
-                alipayTemplate.getCharset(), alipayTemplate.getSign_type()); //调用SDK验证签名
-
-        if (signVerified) {
-            System.out.println("签名验证成功...");
-            //去修改订单状态
-            String result = orderService.handlePayResult(asyncVo);
-            return result;
-        } else {
-            System.out.println("签名验证失败...");
-            return "error";
-        }
+        return "error";
     }
 
-    @PostMapping(value = "/pay/notify")
-    public String asyncNotify(@RequestBody String notifyData) {
-        //异步通知结果
-        return orderService.asyncNotify(notifyData);
-    }
+    //@PostMapping(value = "/pay/notify")
+    //public String asyncNotify(@RequestBody String notifyData) {
+    //    //异步通知结果
+    //    return orderService.asyncNotify(notifyData);
+    //}
 
 }

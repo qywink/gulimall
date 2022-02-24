@@ -1,6 +1,6 @@
 package com.atguigu.gulimall.coupon.controller;
 
-import com.atguigu.common.to.SkuReductionTo;
+import com.atguigu.common.to.product.SkuReductionTO;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.coupon.entity.SkuFullReductionEntity;
@@ -12,12 +12,13 @@ import java.util.Arrays;
 import java.util.Map;
 
 
+
 /**
  * 商品满减信息
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 @RestController
 @RequestMapping("coupon/skufullreduction")
@@ -25,19 +26,10 @@ public class SkuFullReductionController {
     @Autowired
     private SkuFullReductionService skuFullReductionService;
 
-    @PostMapping("/saveinfo")
-    public R saveInfo(@RequestBody SkuReductionTo skuReductionTo){
-
-        skuFullReductionService.saveSkuReduction(skuReductionTo);
-
-        return R.ok();
-    }
-
     /**
      * 列表
      */
     @RequestMapping("/list")
-    //@RequiresPermissions("coupon:skufullreduction:list")
     public R list(@RequestParam Map<String, Object> params){
         PageUtils page = skuFullReductionService.queryPage(params);
 
@@ -49,7 +41,6 @@ public class SkuFullReductionController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    //@RequiresPermissions("coupon:skufullreduction:info")
     public R info(@PathVariable("id") Long id){
 		SkuFullReductionEntity skuFullReduction = skuFullReductionService.getById(id);
 
@@ -60,9 +51,18 @@ public class SkuFullReductionController {
      * 保存
      */
     @RequestMapping("/save")
-    //@RequiresPermissions("coupon:skufullreduction:save")
     public R save(@RequestBody SkuFullReductionEntity skuFullReduction){
 		skuFullReductionService.save(skuFullReduction);
+
+        return R.ok();
+    }
+
+    /**
+     * 保存
+     */
+    @PostMapping("/saveinfo")
+    public R save(@RequestBody SkuReductionTO reductionTo){
+        skuFullReductionService.saveSkuReduction(reductionTo);
 
         return R.ok();
     }
@@ -71,7 +71,6 @@ public class SkuFullReductionController {
      * 修改
      */
     @RequestMapping("/update")
-    //@RequiresPermissions("coupon:skufullreduction:update")
     public R update(@RequestBody SkuFullReductionEntity skuFullReduction){
 		skuFullReductionService.updateById(skuFullReduction);
 
@@ -82,7 +81,6 @@ public class SkuFullReductionController {
      * 删除
      */
     @RequestMapping("/delete")
-    //@RequiresPermissions("coupon:skufullreduction:delete")
     public R delete(@RequestBody Long[] ids){
 		skuFullReductionService.removeByIds(Arrays.asList(ids));
 

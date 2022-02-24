@@ -2,17 +2,17 @@ package com.atguigu.gulimall.coupon.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import lombok.Data;
 
 /**
  * 秒杀活动
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 @Data
 @TableName("sms_seckill_promotion")

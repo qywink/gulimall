@@ -1,8 +1,8 @@
 package com.atguigu.gulimall.product.service;
 
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.gulimall.product.entity.SpuCommentEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.entity.product.SpuCommentEntity;
 
 import java.util.Map;
 
@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 09:37:19
+ * @date 2021-09-02 22:58:35
  */
 public interface SpuCommentService extends IService<SpuCommentEntity> {
 

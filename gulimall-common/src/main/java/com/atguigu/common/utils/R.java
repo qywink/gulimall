@@ -8,8 +8,10 @@
 
 package com.atguigu.common.utils;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.constant.DateConstant;
+import com.atguigu.common.exception.BizCodeEnume;
 import org.apache.http.HttpStatus;
 
 import java.util.HashMap;
@@ -22,38 +24,44 @@ import java.util.Map;
  */
 public class R extends HashMap<String, Object> {
 	private static final long serialVersionUID = 1L;
-
-	public <T> T getData(String key, TypeReference<T> typeReference) {
-		Object data = get(key);// 默认是map类型，springmvc做的
-		String jsonStr = JSON.toJSONString(data);
-		T t = JSON.parseObject(jsonStr, typeReference);
-		return t;
-	}
-
-	// 利用fastJson进行逆转
-	// 这里要声明泛型<T>，这个泛型只跟方法有关，跟类无关。
-	// 例如类上有个泛型，这里可以使用类上的泛型，就不用声明
-	public <T> T getData(TypeReference<T> typeReference) {
-		Object data = get("data");// 默认是map类型，springmvc做的
-		String jsonStr = JSON.toJSONString(data);
-		T t = JSON.parseObject(jsonStr, typeReference);
-		return t;
-	}
-
-	public R setData(Object data) {
-		put("data", data);
-		return this;
-	}
-
+	
 	public R() {
 		put("code", 0);
 		put("msg", "success");
 	}
 
+	/**
+	 * 封装数据
+	 */
+	public R setData(Object data) {
+		return put("data", data);
+	}
+
+	/**
+	 * 解析数据
+	 * 1.@ResponseBody返回类型被封装成了Json格式
+	 * 2.feign接收参数时也会封装成json格式，data对象也被解析成json格式的数据（[集合对象]或{map对象}）
+	 * 3.将data转成json字符串格式，然后再解析成对象
+	 */
+	public <T> T getData(TypeReference<T> type) {
+		Object data = get("data");
+		String jsonString = JSONObject.toJSONStringWithDateFormat(data, DateConstant.DATE_FORMAT);
+		return JSONObject.parseObject(jsonString, type);
+	}
+
+	/**
+	 * 解析数据
+	 */
+	public <T> T getData(String key, TypeReference<T> type) {
+		Object data = get(key);
+		String jsonString = JSONObject.toJSONStringWithDateFormat(data, DateConstant.DATE_FORMAT);
+		return JSONObject.parseObject(jsonString, type);
+	}
+	
 	public static R error() {
 		return error(HttpStatus.SC_INTERNAL_SERVER_ERROR, "未知异常，请联系管理员");
 	}
-
+	
 	public static R error(String msg) {
 		return error(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
 	}
@@ -65,18 +73,22 @@ public class R extends HashMap<String, Object> {
 		return r;
 	}
 
+	public static R error(BizCodeEnume bizCode) {
+		return error(bizCode.getCode(), bizCode.getMsg());
+	}
+
 	public static R ok(String msg) {
 		R r = new R();
 		r.put("msg", msg);
 		return r;
 	}
-
+	
 	public static R ok(Map<String, Object> map) {
 		R r = new R();
 		r.putAll(map);
 		return r;
 	}
-
+	
 	public static R ok() {
 		return new R();
 	}

@@ -1,8 +1,11 @@
 package com.atguigu.gulimall.product.config;
 
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.atguigu.gulimall.product.config.MyThreadConfig.ThreadPoolConfigProperties;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -21,8 +24,16 @@ public class MyThreadConfig {
                 TimeUnit.SECONDS,
                 new LinkedBlockingDeque<>(100000),
                 Executors.defaultThreadFactory(),
-                new ThreadPoolExecutor.AbortPolicy()
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
+    }
+
+    @ConfigurationProperties(prefix = "gulimall.thread")
+    @Data
+    public class ThreadPoolConfigProperties {
+        private Integer coreSize;
+        private Integer maxSize;
+        private Integer keepAliveTime;
     }
 }
 

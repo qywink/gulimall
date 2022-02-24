@@ -1,8 +1,8 @@
 package com.atguigu.gulimall.product.service;
 
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.gulimall.product.entity.SpuImagesEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.entity.product.SpuImagesEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -12,12 +12,15 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 09:37:19
+ * @date 2021-09-02 22:58:35
  */
 public interface SpuImagesService extends IService<SpuImagesEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
 
-    void saveImages(Long id, List<String> images);
+    /**
+     * 新增商品图片
+     */
+    void saveSpuImages(Long spuId, List<String> images);
 }
 

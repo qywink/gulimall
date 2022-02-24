@@ -2,18 +2,17 @@ package com.atguigu.gulimall.member.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-
-import java.math.BigDecimal;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * 会员统计信息
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:18:09
+ * @date 2021-09-02 22:56:37
  */
 @Data
 @TableName("ums_member_statistics_info")

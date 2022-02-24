@@ -1,9 +1,9 @@
 package com.atguigu.gulimall.product.service;
 
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.gulimall.product.entity.CategoryEntity;
-import com.atguigu.gulimall.product.vo.Catalog2Vo;
+import com.atguigu.common.vo.product.Catalog2VO;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.entity.product.CategoryEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 09:37:18
+ * @date 2021-09-02 22:58:35
  */
 public interface CategoryService extends IService<CategoryEntity> {
 
@@ -21,19 +21,35 @@ public interface CategoryService extends IService<CategoryEntity> {
 
     List<CategoryEntity> listWithTree();
 
+    /**
+     * 删除分类
+     */
     void removeMenuByIds(List<Long> asList);
 
     /**
-     * 找到catelog的完整路径
-     * @param catelogId
-     * @return
+     * 根据catelogId查询所有父分类ID
      */
-    Long[] findCatelogId(Long catelogId);
+    Long[] findCatelogPath(Long catelogId);
 
+    /**
+     * 级联更新所有关联表的冗余数据
+     */
     void updateCascade(CategoryEntity category);
 
+    /**
+     * 查出所有1级分类
+     */
     List<CategoryEntity> getLevel1Categorys();
 
-    Map<String, List<Catalog2Vo>> getCatalogJson();
-}
+    /**
+     * 查询三级分类并封装成Map返回
+     * 使用SpringCache注解方式简化缓存设置
+     */
+    Map<String, List<Catalog2VO>> getCatalogJsonWithSpringCache();
 
+    /**
+     * 查询三级分类并封装成Map返回
+     * 使用redis客户端实现缓存设置
+     */
+    Map<String, List<Catalog2VO>> getCatalogJson();
+}

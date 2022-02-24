@@ -1,13 +1,17 @@
 package com.atguigu.common.to.mq;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 库存单详情
  * wms_ware_order_task_detail
  */
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
-public class StockDetailTo {
+public class StockDetailTO {
 
     private Long id;
     /**

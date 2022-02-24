@@ -1,706 +1,499 @@
 package com.atguigu.gulimall.order.service.impl;
 
 import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.constant.ObjectConstant;
+import com.atguigu.common.constant.order.OrderConstant;
+import com.atguigu.common.constant.order.OrderConstant.OrderStatusEnum;
+import com.atguigu.common.entity.order.OrderEntity;
+import com.atguigu.common.entity.order.OrderItemEntity;
+import com.atguigu.common.entity.order.PaymentInfoEntity;
 import com.atguigu.common.exception.NoStockException;
-import com.atguigu.common.to.OrderTo;
-import com.atguigu.common.to.mq.SeckillOrderTo;
+import com.atguigu.common.exception.VerifyPriceException;
+import com.atguigu.common.to.mq.SeckillOrderTO;
+import com.atguigu.common.to.order.OrderCreateTO;
+import com.atguigu.common.to.order.OrderTO;
+import com.atguigu.common.to.order.SpuInfoTO;
+import com.atguigu.common.to.order.WareSkuLockTO;
+import com.atguigu.common.to.ware.SkuHasStockTO;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.common.utils.R;
-import com.atguigu.common.vo.MemberResponseVo;
-import com.atguigu.gulimall.order.constant.PayConstant;
+import com.atguigu.common.vo.auth.MemberResponseVO;
+import com.atguigu.common.vo.order.*;
 import com.atguigu.gulimall.order.dao.OrderDao;
-import com.atguigu.gulimall.order.entity.OrderEntity;
-import com.atguigu.gulimall.order.entity.OrderItemEntity;
-import com.atguigu.gulimall.order.entity.PaymentInfoEntity;
-import com.atguigu.gulimall.order.enume.OrderStatusEnum;
 import com.atguigu.gulimall.order.feign.CartFeignService;
 import com.atguigu.gulimall.order.feign.MemberFeignService;
 import com.atguigu.gulimall.order.feign.ProductFeignService;
 import com.atguigu.gulimall.order.feign.WmsFeignService;
 import com.atguigu.gulimall.order.interceptor.LoginUserInterceptor;
-import com.atguigu.gulimall.order.service.OrderItemService;
 import com.atguigu.gulimall.order.service.OrderService;
 import com.atguigu.gulimall.order.service.PaymentInfoService;
-import com.atguigu.gulimall.order.to.OrderCreateTo;
-import com.atguigu.gulimall.order.to.SpuInfoVo;
-import com.atguigu.gulimall.order.vo.*;
+import com.atguigu.gulimall.order.utils.TokenUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.lly835.bestpay.model.PayResponse;
-import com.lly835.bestpay.service.BestPayService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.atguigu.common.constant.CartConstant.CART_PREFIX;
-import static com.atguigu.gulimall.order.constant.OrderConstant.USER_ORDER_TOKEN_PREFIX;
 
-
-@Slf4j
 @Service("orderService")
 public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> implements OrderService {
 
-    private ThreadLocal<OrderSubmitVo> confirmVoThreadLocal = new ThreadLocal<>();
+    // 提交订单共享提交数据
+    private ThreadLocal<OrderSubmitVO> confirmVoThreadLocal = new ThreadLocal<>();
 
     @Autowired
-    private MemberFeignService memberFeignService;
-
+    MemberFeignService memberFeignService;
     @Autowired
-    private CartFeignService cartFeignService;
-
+    CartFeignService cartFeignService;
     @Autowired
-    private WmsFeignService wmsFeignService;
-
+    WmsFeignService wmsFeignService;
     @Autowired
-    private ProductFeignService productFeignService;
-
+    ProductFeignService productFeignService;
     @Autowired
-    private OrderItemService orderItemService;
-
+    OrderItemServiceImpl orderItemService;
     @Autowired
-    private StringRedisTemplate redisTemplate;
-
+    PaymentInfoService paymentInfoService;
     @Autowired
-    private RabbitTemplate rabbitTemplate;
-
+    ThreadPoolExecutor executor;
     @Autowired
-    private PaymentInfoService paymentInfoService;
-
+    RabbitTemplate rabbitTemplate;
     @Autowired
-    private BestPayService bestPayService;
+    TokenUtil tokenUtil;
 
-    @Autowired
-    private ThreadPoolExecutor threadPoolExecutor;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
-        IPage<OrderEntity> page = this.page(
-                new Query<OrderEntity>().getPage(params),
-                new QueryWrapper<OrderEntity>()
-        );
+        IPage<OrderEntity> page = this.page(new Query<OrderEntity>().getPage(params), new QueryWrapper<OrderEntity>());
 
         return new PageUtils(page);
     }
 
     /**
-     * 订单确认页返回需要用的数据
-     * @return
+     * 分页查询订单列表、订单详情
      */
     @Override
-    public OrderConfirmVo confirmOrder() throws ExecutionException, InterruptedException {
-        //构建OrderConfirmVo
-        OrderConfirmVo confirmVo = new OrderConfirmVo();
-        //获取当前用户登录的信息
-        MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
-        //TODO :获取当前线程请求头信息(解决Feign异步调用丢失请求头问题)
-        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-        //开启第一个异步任务
-        CompletableFuture<Void> addressFuture = CompletableFuture.runAsync(() -> {
-            //每一个线程都来共享之前的请求数据
-            RequestContextHolder.setRequestAttributes(requestAttributes);
-            //1、远程查询所有的收获地址列表
-            List<MemberAddressVo> address = memberFeignService.getAddress(memberResponseVo.getId());
-            confirmVo.setMemberAddressVos(address);
-        }, threadPoolExecutor);
+    public PageUtils queryPageWithItem(Map<String, Object> params) {
+        // 获取登录用户
+        MemberResponseVO member = LoginUserInterceptor.loginUser.get();
 
-        //开启第二个异步任务
-        CompletableFuture<Void> cartInfoFuture = CompletableFuture.runAsync(() -> {
-            //每一个线程都来共享之前的请求数据【解决异步ThreadLocal 无法共享数据】
-            RequestContextHolder.setRequestAttributes(requestAttributes);
-            //2、远程查询购物车所有选中的购物项
-            List<OrderItemVo> currentCartItems = cartFeignService.getCurrentCartItems();
-            confirmVo.setItems(currentCartItems);
-            //feign在远程调用之前要构造请求，调用很多的拦截器
-        }, threadPoolExecutor).thenRunAsync(() -> {
-            List<OrderItemVo> items = confirmVo.getItems();
-            //获取全部商品的id
-            List<Long> skuIds = items.stream()
-                    .map((itemVo -> itemVo.getSkuId()))
-                    .collect(Collectors.toList());
+        // 查询订单
+        IPage<OrderEntity> page = this.page(
+                new Query<OrderEntity>().getPage(params),
+                new QueryWrapper<OrderEntity>()
+                        .eq("member_id", member.getId())
+                        .orderByDesc("create_time"));
+        // 查询订单项
+        List<String> orderSns = page.getRecords().stream().map(order -> order.getOrderSn()).collect(Collectors.toList());
+        Map<String, List<OrderItemEntity>> itemMap = orderItemService.list(new QueryWrapper<OrderItemEntity>()
+                        .in("order_sn", orderSns))
+                .stream().collect(Collectors.groupingBy(OrderItemEntity::getOrderSn));
 
-            //3、远程查询商品库存信息
-            R skuHasStock = wmsFeignService.getSkuHasStock(skuIds);
-            List<SkuStockVo> skuStockVos = skuHasStock.getData("data", new TypeReference<List<SkuStockVo>>() {});
+        // 遍历封装订单项
+        page.getRecords().forEach(order -> order.setOrderItemEntityList(itemMap.get(order.getOrderSn())));
 
-            if (skuStockVos != null && skuStockVos.size() > 0) {
-                //将skuStockVos集合转换为map
-                Map<Long, Boolean> skuHasStockMap = skuStockVos.stream().collect(Collectors.toMap(SkuStockVo::getSkuId, SkuStockVo::getHasStock));
-                confirmVo.setStocks(skuHasStockMap);
-            }
-        },threadPoolExecutor);
-
-        //4、、查询用户积分
-        Integer integration = memberResponseVo.getIntegration();
-        confirmVo.setIntegration(integration);
-
-        //5、、价格数据自动计算
-
-        //TODO 5、防重令牌(防止表单重复提交)
-        //为用户设置一个token，三十分钟过期时间（存在redis）
-        String token = UUID.randomUUID().toString().replace("-", "");
-        redisTemplate.opsForValue().set(USER_ORDER_TOKEN_PREFIX+memberResponseVo.getId(),token,30, TimeUnit.MINUTES);
-        confirmVo.setOrderToken(token);
-
-        CompletableFuture.allOf(addressFuture,cartInfoFuture).get();
-
-        return confirmVo;
+        return new PageUtils(page);
     }
 
     /**
-     * 提交订单
-     * @param vo
-     * @return
+     * 获取订单详情
      */
-    // @Transactional(isolation = Isolation.READ_COMMITTED) 设置事务的隔离级别
-    // @Transactional(propagation = Propagation.REQUIRED)   设置事务的传播级别
-    // @GlobalTransactional(rollbackFor = Exception.class)
+    @Override
+    public OrderEntity getOrderByOrderSn(String orderSn) {
+        return getOne(new QueryWrapper<OrderEntity>().eq("order_sn", orderSn));
+    }
+
+    /**
+     * 获取结算页（confirm.html）VO数据
+     */
+    @Override
+    public OrderConfirmVO OrderConfirmVO() throws Exception {
+        OrderConfirmVO result = new OrderConfirmVO();
+        // 获取当前用户
+        MemberResponseVO member = LoginUserInterceptor.loginUser.get();
+
+        // 获取当前线程上下文环境器
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        CompletableFuture<Void> addressFuture = CompletableFuture.runAsync(() -> {
+            // 1.查询封装当前用户收货列表
+            // 同步上下文环境器，解决异步无法从ThreadLocal获取RequestAttributes
+            RequestContextHolder.setRequestAttributes(requestAttributes);
+            List<MemberAddressVO> address = memberFeignService.getAddress(member.getId());
+            result.setMemberAddressVos(address);
+        }, executor);
+
+        CompletableFuture<Void> cartFuture = CompletableFuture.runAsync(() -> {
+            // 2.查询购物车所有选中的商品
+            // 同步上下文环境器，解决异步无法从ThreadLocal获取RequestAttributes
+            RequestContextHolder.setRequestAttributes(requestAttributes);
+            // 请求头应该放入GULIMALLSESSION（feign请求会根据requestInterceptors构建请求头）
+            List<OrderItemVO> items = cartFeignService.getCurrentCartItems();
+            result.setItems(items);
+        }, executor).thenRunAsync(() -> {
+            // 3.批量查询库存（有货/无货）
+            List<Long> skuIds = result.getItems().stream().map(item -> item.getSkuId()).collect(Collectors.toList());
+            R skuHasStock = wmsFeignService.getSkuHasStock(skuIds);
+            List<SkuHasStockTO> skuHasStocks = skuHasStock.getData(new TypeReference<List<SkuHasStockTO>>() {
+            });
+            Map<Long, Boolean> stocks = skuHasStocks.stream().collect(Collectors.toMap(key -> key.getSkuId(), val -> val.getHasStock()));
+            result.setStocks(stocks);
+        });
+
+        // 4.查询用户积分
+        Integer integration = member.getIntegration();// 积分
+        result.setIntegration(integration);
+
+        // 5.金额数据自动计算
+
+        // 6.防重令牌
+        String token = tokenUtil.createToken();
+        result.setUniqueToken(token);
+
+        // 阻塞等待所有异步任务返回
+        CompletableFuture.allOf(addressFuture, cartFuture).get();
+
+        return result;
+    }
+
+    /**
+     * 创建订单
+     * GlobalTransactional：seata分布式事务，不适合高并发场景（默认基于AT实现）
+     *
+     * @param vo 收货地址、发票信息、使用的优惠券、备注、应付总额、令牌
+     */
+    //@GlobalTransactional
     @Transactional
     @Override
-    public SubmitOrderResponseVo submitOrder(OrderSubmitVo vo) {
-
-        confirmVoThreadLocal.set(vo);
-
-        SubmitOrderResponseVo responseVo = new SubmitOrderResponseVo();
-        //去创建、下订单、验令牌、验价格、锁定库存...
-
-        //获取当前用户登录的信息
-        MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
-        responseVo.setCode(0);
-
-        //1、验证令牌是否合法【令牌的对比和删除必须保证原子性】
-        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-        String orderToken = vo.getOrderToken();
-
-        //通过lure脚本原子验证令牌和删除令牌
-        Long result = redisTemplate.execute(new DefaultRedisScript<Long>(script, Long.class),
-                Arrays.asList(USER_ORDER_TOKEN_PREFIX + memberResponseVo.getId()),
-                orderToken);
-
-        if (result == 0L) {
-            //令牌验证失败
-            responseVo.setCode(1);
-            return responseVo;
+    public SubmitOrderResponseVO submitOrder(OrderSubmitVO orderSubmitVO) throws Exception {
+        SubmitOrderResponseVO result = new SubmitOrderResponseVO();// 返回值
+        // 创建订单线程共享提交数据
+        confirmVoThreadLocal.set(orderSubmitVO);
+        // 1.生成订单实体对象（订单 + 订单项）
+        OrderCreateTO order = createOrder();
+        // 2.验价应付金额（允许0.01误差，前后端计算不一致）
+        if (Math.abs(orderSubmitVO.getPayPrice().subtract(order.getPayPrice()).doubleValue()) >= 0.01) {
+            // 验价不通过
+            throw new VerifyPriceException();
+        }
+        // 验价成功
+        // 3.保存订单
+        saveOrder(order);
+        // 4.库存锁定（wms_ware_sku）
+        // 封装待锁定商品项TO
+        WareSkuLockTO lockTO = new WareSkuLockTO();
+        lockTO.setOrderSn(order.getOrder().getOrderSn());
+        List<OrderItemVO> locks = order.getOrderItems().stream().map((item) -> {
+            OrderItemVO lock = new OrderItemVO();
+            lock.setSkuId(item.getSkuId());
+            lock.setCount(item.getSkuQuantity());
+            lock.setTitle(item.getSkuName());
+            return lock;
+        }).collect(Collectors.toList());
+        lockTO.setLocks(locks);// 待锁定订单项
+        R response = wmsFeignService.orderLockStock(lockTO);
+        if (response.getCode() == 0) {
+            // 锁定成功
+            // TODO 5.远程扣减积分
+            // 封装响应数据返回
+            result.setOrder(order.getOrder());
+            //System.out.println(10 / 0); // 模拟订单回滚，库存不会滚
+            // 6.发送创建订单到延时队列
+            rabbitTemplate.convertAndSend("order-event-exchange", "order.create.order", order.getOrder());
+            return result;
         } else {
-            //令牌验证成功
-            //1、创建订单、订单项等信息
-            OrderCreateTo order = createOrder();
-
-            //2、验证价格
-            BigDecimal payAmount = order.getOrder().getPayAmount();
-            BigDecimal payPrice = vo.getPayPrice();
-
-            if (Math.abs(payAmount.subtract(payPrice).doubleValue()) < 0.01) {
-                //金额对比
-                //TODO 3、保存订单
-                saveOrder(order);
-
-                //4、库存锁定,只要有异常，回滚订单数据
-                //订单号、所有订单项信息(skuId,skuNum,skuName)
-                WareSkuLockVo lockVo = new WareSkuLockVo();
-                lockVo.setOrderSn(order.getOrder().getOrderSn());
-
-                //获取出要锁定的商品数据信息【order里面存储的是Entity】
-                List<OrderItemVo> orderItemVos = order.getOrderItems().stream().map((item) -> {
-                    OrderItemVo orderItemVo = new OrderItemVo();
-                    orderItemVo.setSkuId(item.getSkuId());
-                    orderItemVo.setCount(item.getSkuQuantity());
-                    orderItemVo.setTitle(item.getSkuName());
-                    return orderItemVo;
-                }).collect(Collectors.toList());
-                lockVo.setLocks(orderItemVos);
-
-                //TODO 调用远程锁定库存的方法
-                //出现的问题：扣减库存成功了，但是由于网络原因超时，出现异常，导致订单事务回滚，库存事务不回滚(解决方案：seata)
-                //为了保证高并发，不推荐使用seata，因为是加锁，并行化，提升不了效率,可以发消息给库存服务
-                R r = wmsFeignService.orderLockStock(lockVo);
-                if (r.getCode() == 0) {
-                    //锁定成功
-                    responseVo.setOrder(order.getOrder());
-                    //int i = 10/0;
-
-                    //TODO 订单创建成功，发送消息给MQ
-                    rabbitTemplate.convertAndSend("order-event-exchange","order.create.order",order.getOrder());
-
-                    //删除购物车里的数据
-                    redisTemplate.delete(CART_PREFIX+memberResponseVo.getId());
-                    return responseVo;
-                } else {
-                    //锁定失败
-                    String msg = (String) r.get("msg");
-                    throw new NoStockException(msg);
-                    // responseVo.setCode(3);
-                    // return responseVo;
-                }
-            } else {
-                responseVo.setCode(2);
-                return responseVo;
-            }
+            // 锁定失败
+            throw new NoStockException("");
         }
     }
 
     /**
-     * 按照订单号获取订单信息
-     * @param orderSn
-     * @return
+     * 封装订单实体类对象
+     * 订单 + 订单项
      */
-    @Override
-    public OrderEntity getOrderByOrderSn(String orderSn) {
+    private OrderCreateTO createOrder() throws Exception {
+        OrderCreateTO result = new OrderCreateTO();// 订单
+        // 1.生成订单号
+        String orderSn = IdWorker.getTimeId();
+        // 2.生成订单实体对象
+        OrderEntity orderEntity = buildOrder(orderSn);
+        // 3.生成订单项实体对象
+        List<OrderItemEntity> orderItemEntities = buildOrderItems(orderSn);
+        // 4.汇总封装（封装订单价格[订单项价格之和]、封装订单积分、成长值[订单项积分、成长值之和]）
+        summaryFillOrder(orderEntity, orderItemEntities);
 
-        OrderEntity orderEntity = this.baseMapper.selectOne(new QueryWrapper<OrderEntity>().eq("order_sn", orderSn));
+        // 5.封装TO返回
+        result.setOrder(orderEntity);
+        result.setOrderItems(orderItemEntities);
+        result.setFare(orderEntity.getFreightAmount());
+        result.setPayPrice(orderEntity.getPayAmount());// 设置应付金额
+        return result;
+    }
 
+    /**
+     * 生成订单实体对象
+     *
+     * @param orderSn 订单号
+     */
+    private OrderEntity buildOrder(String orderSn) {
+        OrderEntity orderEntity = new OrderEntity();// 订单实体类
+        // 1.封装会员ID
+        MemberResponseVO member = LoginUserInterceptor.loginUser.get();// 拦截器获取登录信息
+        orderEntity.setMemberId(member.getId());
+        // 2.封装订单号
+        orderEntity.setOrderSn(orderSn);
+        // 3.封装运费
+        OrderSubmitVO orderSubmitVO = confirmVoThreadLocal.get();
+        R fare = wmsFeignService.getFare(orderSubmitVO.getAddrId());// 获取地址
+        FareVO fareVO = fare.getData(new TypeReference<FareVO>() {
+        });
+        orderEntity.setFreightAmount(fareVO.getFare());
+        // 4.封装收货地址信息
+        orderEntity.setReceiverName(fareVO.getAddress().getName());// 收货人名字
+        orderEntity.setReceiverPhone(fareVO.getAddress().getPhone());// 收货人电话
+        orderEntity.setReceiverProvince(fareVO.getAddress().getProvince());// 省
+        orderEntity.setReceiverCity(fareVO.getAddress().getCity());// 市
+        orderEntity.setReceiverRegion(fareVO.getAddress().getRegion());// 区
+        orderEntity.setReceiverDetailAddress(fareVO.getAddress().getDetailAddress());// 详细地址
+        orderEntity.setReceiverPostCode(fareVO.getAddress().getPostCode());// 收货人邮编
+        // 5.封装订单状态信息
+        orderEntity.setStatus(OrderConstant.OrderStatusEnum.CREATE_NEW.getCode());
+        // 6.设置自动确认时间
+        orderEntity.setAutoConfirmDay(OrderConstant.autoConfirmDay);// 7天
+        // 7.设置未删除状态
+        orderEntity.setDeleteStatus(ObjectConstant.BooleanIntEnum.NO.getCode());
+        // 8.设置时间
+        Date now = new Date();
+        orderEntity.setCreateTime(now);
+        orderEntity.setModifyTime(now);
         return orderEntity;
+    }
+
+    /**
+     * 生成订单项实体对象
+     * 购物车每项选中商品产生一个订单项
+     */
+    private List<OrderItemEntity> buildOrderItems(String orderSn) throws Exception {
+        // 封装订单项（最后确定的价格，不会再改变）
+        List<OrderItemVO> currentCartItems = cartFeignService.getCurrentCartItems();// 获取当前用户购物车所有商品
+        if (!CollectionUtils.isEmpty(currentCartItems)) {
+            // 遍历购物车商品，循环构建每个订单项
+            List<OrderItemEntity> itemEntities = currentCartItems.stream()
+                    .filter(cartItem -> cartItem.getCheck())
+                    .map(cartItem -> buildOrderItem(orderSn, cartItem))
+                    .collect(Collectors.toList());
+            return itemEntities;
+        } else {
+            throw new Exception();
+        }
+    }
+
+    /**
+     * 生成单个订单项实体对象
+     */
+    private OrderItemEntity buildOrderItem(String orderSn, OrderItemVO cartItem) {
+        OrderItemEntity itemEntity = new OrderItemEntity();
+        // 1.封装订单号
+        itemEntity.setOrderSn(orderSn);
+        // 2.封装SPU信息
+        R spuInfo = productFeignService.getSpuInfoBySkuId(cartItem.getSkuId());// 查询SPU信息
+        SpuInfoTO spuInfoTO = spuInfo.getData(new TypeReference<SpuInfoTO>() {
+        });
+        itemEntity.setSpuId(spuInfoTO.getId());
+        itemEntity.setSpuName(spuInfoTO.getSpuName());
+        itemEntity.setSpuBrand(spuInfoTO.getSpuName());
+        itemEntity.setCategoryId(spuInfoTO.getCatalogId());
+        // 3.封装SKU信息
+        itemEntity.setSkuId(cartItem.getSkuId());
+        itemEntity.setSkuName(cartItem.getTitle());
+        itemEntity.setSkuPic(cartItem.getImage());// 商品sku图片
+        itemEntity.setSkuPrice(cartItem.getPrice());// 这个是最新价格，购物车模块查询数据库得到
+        itemEntity.setSkuQuantity(cartItem.getCount());// 当前商品数量
+        String skuAttrsVals = String.join(";", cartItem.getSkuAttrValues());
+        itemEntity.setSkuAttrsVals(skuAttrsVals);// 商品销售属性组合["颜色:星河银","版本:8GB+256GB"]
+        // 4.优惠信息【不做】
+
+        // 5.积分信息
+        int num = cartItem.getPrice().multiply(new BigDecimal(cartItem.getCount())).intValue();// 分值=单价*数量
+        itemEntity.setGiftGrowth(num);// 成长值
+        itemEntity.setGiftIntegration(num);// 积分
+
+        // 6.价格信息
+        itemEntity.setPromotionAmount(BigDecimal.ZERO);// 促销金额
+        itemEntity.setCouponAmount(BigDecimal.ZERO);// 优惠券金额
+        itemEntity.setIntegrationAmount(BigDecimal.ZERO);// 积分优惠金额
+        BigDecimal realAmount = itemEntity.getSkuPrice().multiply(new BigDecimal(itemEntity.getSkuQuantity()))
+                .subtract(itemEntity.getPromotionAmount())
+                .subtract(itemEntity.getCouponAmount())
+                .subtract(itemEntity.getIntegrationAmount());
+        itemEntity.setRealAmount(realAmount);// 实际金额，减去所有优惠金额
+        return itemEntity;
+    }
+
+    /**
+     * 汇总封装订单
+     * 1.计算订单总金额
+     * 2.汇总积分、成长值
+     * 3.汇总应付总额 = 订单总金额 + 运费
+     *
+     * @param orderEntity       订单
+     * @param orderItemEntities 订单项
+     */
+    private void summaryFillOrder(OrderEntity orderEntity, List<OrderItemEntity> orderItemEntities) {
+        // 1.订单总额、促销总金额、优惠券总金额、积分优惠总金额
+        BigDecimal total = new BigDecimal(0);
+        BigDecimal coupon = new BigDecimal(0);
+        BigDecimal promotion = new BigDecimal(0);
+        BigDecimal integration = new BigDecimal(0);
+        // 2.积分、成长值
+        Integer giftIntegration = 0;
+        Integer giftGrowth = 0;
+        for (OrderItemEntity itemEntity : orderItemEntities) {
+            total = total.add(itemEntity.getRealAmount());// 订单总额
+            coupon = coupon.add(itemEntity.getCouponAmount());// 促销总金额
+            promotion = promotion.add(itemEntity.getPromotionAmount());// 优惠券总金额
+            integration = integration.add(itemEntity.getIntegrationAmount());// 积分优惠总金额
+            giftIntegration = giftIntegration + itemEntity.getGiftIntegration();// 积分
+            giftGrowth = giftGrowth + itemEntity.getGiftGrowth();// 成长值
+        }
+        orderEntity.setTotalAmount(total);
+        orderEntity.setCouponAmount(coupon);
+        orderEntity.setPromotionAmount(promotion);
+        orderEntity.setIntegrationAmount(integration);
+        orderEntity.setIntegration(giftIntegration);// 积分
+        orderEntity.setGrowth(giftGrowth);// 成长值
+
+        // 3.应付总额
+        orderEntity.setPayAmount(orderEntity.getTotalAmount().add(orderEntity.getFreightAmount()));// 订单总额 +　运费
+    }
+
+    /**
+     * 保存订单
+     * 将封装生成的订单对象 + 订单项对象持久化到DB
+     *
+     * @param order
+     */
+    private void saveOrder(OrderCreateTO order) {
+        // 1.持久化订单对象
+        OrderEntity orderEntity = order.getOrder();
+        save(orderEntity);
+
+        // 2.持久化订单项对象
+        List<OrderItemEntity> itemEntities = order.getOrderItems();
+        orderItemService.saveBatch(itemEntities);
     }
 
     /**
      * 关闭订单
      */
     @Override
-    public void closeOrder(OrderEntity orderEntity) {
-
-        //关闭订单之前先查询一下数据库，判断此订单状态是否已支付
-        OrderEntity orderInfo = this.getOne(new QueryWrapper<OrderEntity>().
-                eq("order_sn",orderEntity.getOrderSn()));
-
-        if (orderInfo.getStatus().equals(OrderStatusEnum.CREATE_NEW.getCode())) {
-            //代付款状态进行关单
-            OrderEntity orderUpdate = new OrderEntity();
-            orderUpdate.setId(orderInfo.getId());
-            orderUpdate.setStatus(OrderStatusEnum.CANCLED.getCode());
-            this.updateById(orderUpdate);
-
-            // 发送消息给MQ
-            OrderTo orderTo = new OrderTo();
-            BeanUtils.copyProperties(orderInfo, orderTo);
+    public void closeOrder(OrderEntity order) {
+        OrderEntity _order = getById(order.getId());
+        if (OrderConstant.OrderStatusEnum.CREATE_NEW.getCode().equals(_order.getStatus())) {
+            // 待付款状态允许关单
+            OrderEntity temp = new OrderEntity();
+            temp.setId(order.getId());
+            temp.setStatus(OrderConstant.OrderStatusEnum.CANCLED.getCode());
+            updateById(temp);
 
             try {
-                //TODO 确保每个消息发送成功，给每个消息做好日志记录，(给数据库保存每一个详细信息)保存每个消息的详细信息
-                //TODO 定期扫描数据库，重新发送失败的消息
-                rabbitTemplate.convertAndSend("order-event-exchange", "order.release.other", orderTo);
+                // 发送消息给MQ
+                OrderTO orderTO = new OrderTO();
+                BeanUtils.copyProperties(_order, orderTO);
+                //TODO 持久化消息到mq_message表中，并设置消息状态为3-已抵达（保存日志记录）
+                rabbitTemplate.convertAndSend("order-event-exchange", "order.release.other", orderTO);
             } catch (Exception e) {
+                // TODO 消息为抵达Broker，修改mq_message消息状态为2-错误抵达
             }
         }
     }
 
-
     /**
-     * 获取当前订单的支付信息
-     */
-    @Override
-    public PayVo getOrderPay(String orderSn) {
-
-        PayVo payVo = new PayVo();
-        OrderEntity orderInfo = this.getOrderByOrderSn(orderSn);
-
-        //保留两位小数点，向上取值
-        BigDecimal payAmount = orderInfo.getPayAmount().setScale(2, BigDecimal.ROUND_UP);
-        payVo.setTotal_amount(payAmount.toString());
-        payVo.setOut_trade_no(orderInfo.getOrderSn());
-
-        //查询订单项的数据
-        List<OrderItemEntity> orderItemInfo = orderItemService.list(
-                new QueryWrapper<OrderItemEntity>().eq("order_sn", orderSn));
-        OrderItemEntity orderItemEntity = orderItemInfo.get(0);
-        payVo.setBody(orderItemEntity.getSkuAttrsVals());
-
-        payVo.setSubject(orderItemEntity.getSkuName());
-
-        return payVo;
-    }
-
-    /**
-     * 查询当前用户所有订单数据
-     */
-    @Override
-    public PageUtils queryPageWithItem(Map<String, Object> params) {
-
-        MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
-
-        IPage<OrderEntity> page = this.page(
-                new Query<OrderEntity>().getPage(params),
-                new QueryWrapper<OrderEntity>()
-                        .eq("member_id",memberResponseVo.getId()).orderByDesc("create_time")
-        );
-
-        //遍历所有订单集合
-        List<OrderEntity> orderEntityList = page.getRecords().stream().map(order -> {
-            //根据订单号查询订单项里的数据
-            List<OrderItemEntity> orderItemEntities = orderItemService.list(new QueryWrapper<OrderItemEntity>()
-                    .eq("order_sn", order.getOrderSn()));
-            order.setOrderItemEntityList(orderItemEntities);
-            return order;
-        }).collect(Collectors.toList());
-
-        page.setRecords(orderEntityList);
-
-        return new PageUtils(page);
-    }
-
-    /**
-     * 保存订单所有数据
-     */
-    private void saveOrder(OrderCreateTo orderCreateTo) {
-
-        //获取订单信息
-        OrderEntity order = orderCreateTo.getOrder();
-        order.setModifyTime(new Date());
-        order.setCreateTime(new Date());
-        //保存订单
-        this.baseMapper.insert(order);
-
-        //获取订单项信息
-        List<OrderItemEntity> orderItems = orderCreateTo.getOrderItems();
-        //批量保存订单项数据
-        orderItemService.saveBatch(orderItems);
-    }
-
-
-    /**
-     * 创建订单
-     */
-    private OrderCreateTo createOrder() {
-        OrderCreateTo createTo = new OrderCreateTo();
-
-        //1、生成订单号
-        String orderSn = IdWorker.getTimeId();
-        // 构建订单数据【封装价格】
-        OrderEntity orderEntity = builderOrder(orderSn);
-
-        //2、获取到所有的订单项【封装价格】
-        List<OrderItemEntity> orderItemEntities = builderOrderItems(orderSn);
-
-        //3、验价(计算价格、积分等信息)
-        computePrice(orderEntity, orderItemEntities);
-
-        createTo.setOrder(orderEntity);
-        createTo.setOrderItems(orderItemEntities);
-
-        return createTo;
-    }
-
-    /**
-     * 计算价格的方法
-     * @param orderEntity
-     * @param orderItemEntities
-     */
-    private void computePrice(OrderEntity orderEntity, List<OrderItemEntity> orderItemEntities) {
-
-        //总价
-        BigDecimal total = new BigDecimal("0.0");
-        //优惠价
-        BigDecimal coupon = new BigDecimal("0.0");
-        BigDecimal intergration = new BigDecimal("0.0");
-        BigDecimal promotion = new BigDecimal("0.0");
-
-        //积分、成长值
-        Integer integrationTotal = 0;
-        Integer growthTotal = 0;
-
-        //订单总额，叠加每一个订单项的总额信息
-        for (OrderItemEntity orderItem : orderItemEntities) {
-            //优惠价格信息
-            coupon = coupon.add(orderItem.getCouponAmount());
-            promotion = promotion.add(orderItem.getPromotionAmount());
-            intergration = intergration.add(orderItem.getIntegrationAmount());
-
-            //总价
-            total = total.add(orderItem.getRealAmount());
-
-            //积分信息和成长值信息
-            integrationTotal += orderItem.getGiftIntegration();
-            growthTotal += orderItem.getGiftGrowth();
-
-        }
-        //1、订单价格相关的
-        orderEntity.setTotalAmount(total);
-        //设置应付总额(总额+运费)
-        orderEntity.setPayAmount(total.add(orderEntity.getFreightAmount()));
-        orderEntity.setCouponAmount(coupon);
-        orderEntity.setPromotionAmount(promotion);
-        orderEntity.setIntegrationAmount(intergration);
-
-        //设置积分成长值信息
-        orderEntity.setIntegration(integrationTotal);
-        orderEntity.setGrowth(growthTotal);
-
-        //设置删除状态(0-未删除，1-已删除)
-        orderEntity.setDeleteStatus(0);
-
-    }
-
-
-    /**
-     * 构建订单数据
-     * @param orderSn
-     * @return
-     */
-    private OrderEntity builderOrder(String orderSn) {
-
-        //获取当前用户登录信息
-        MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
-
-        OrderEntity orderEntity = new OrderEntity();
-        orderEntity.setMemberId(memberResponseVo.getId());
-        orderEntity.setOrderSn(orderSn);
-        orderEntity.setMemberUsername(memberResponseVo.getUsername());
-
-        OrderSubmitVo orderSubmitVo = confirmVoThreadLocal.get();
-
-        //远程获取收货地址和运费信息
-        R fareAddressVo = wmsFeignService.getFare(orderSubmitVo.getAddrId());
-        FareVo fareResp = fareAddressVo.getData("data", new TypeReference<FareVo>() {});
-
-        //获取到运费信息
-        BigDecimal fare = fareResp.getFare();
-        orderEntity.setFreightAmount(fare);
-
-        //获取到收货地址信息
-        MemberAddressVo address = fareResp.getAddress();
-        //设置收货人信息
-        orderEntity.setReceiverName(address.getName());
-        orderEntity.setReceiverPhone(address.getPhone());
-        orderEntity.setReceiverPostCode(address.getPostCode());
-        orderEntity.setReceiverProvince(address.getProvince());
-        orderEntity.setReceiverCity(address.getCity());
-        orderEntity.setReceiverRegion(address.getRegion());
-        orderEntity.setReceiverDetailAddress(address.getDetailAddress());
-
-        //设置订单相关的状态信息
-        orderEntity.setStatus(OrderStatusEnum.CREATE_NEW.getCode());
-        orderEntity.setAutoConfirmDay(7);
-        orderEntity.setConfirmStatus(0);
-        return orderEntity;
-    }
-
-    /**
-     * 构建所有订单项数据
-     * @return
-     */
-    public List<OrderItemEntity> builderOrderItems(String orderSn) {
-
-        List<OrderItemEntity> orderItemEntityList = new ArrayList<>();
-
-        //最后确定每个购物项的价格
-        List<OrderItemVo> currentCartItems = cartFeignService.getCurrentCartItems();
-        if (currentCartItems != null && currentCartItems.size() > 0) {
-            orderItemEntityList = currentCartItems.stream().map((items) -> {
-                //构建订单项数据
-                OrderItemEntity orderItemEntity = builderOrderItem(items);
-                orderItemEntity.setOrderSn(orderSn);
-
-                return orderItemEntity;
-            }).collect(Collectors.toList());
-        }
-
-        return orderItemEntityList;
-    }
-
-    /**
-     * 构建某一个订单项的数据
-     * @param items
-     * @return
-     */
-    private OrderItemEntity builderOrderItem(OrderItemVo items) {
-
-        OrderItemEntity orderItemEntity = new OrderItemEntity();
-
-        //1、商品的spu信息
-        Long skuId = items.getSkuId();
-        //获取spu的信息
-        R spuInfo = productFeignService.getSpuInfoBySkuId(skuId);
-        SpuInfoVo spuInfoData = spuInfo.getData("data", new TypeReference<SpuInfoVo>() {
-        });
-        orderItemEntity.setSpuId(spuInfoData.getId());
-        orderItemEntity.setSpuName(spuInfoData.getSpuName());
-        orderItemEntity.setSpuBrand(spuInfoData.getBrandName());
-        orderItemEntity.setCategoryId(spuInfoData.getCatalogId());
-
-        //2、商品的sku信息
-        orderItemEntity.setSkuId(skuId);
-        orderItemEntity.setSkuName(items.getTitle());
-        orderItemEntity.setSkuPic(items.getImage());
-        orderItemEntity.setSkuPrice(items.getPrice());
-        orderItemEntity.setSkuQuantity(items.getCount());
-
-        //使用StringUtils.collectionToDelimitedString将list集合转换为String
-        String skuAttrValues = StringUtils.collectionToDelimitedString(items.getSkuAttrValues(), ";");
-        orderItemEntity.setSkuAttrsVals(skuAttrValues);
-
-        //3、商品的优惠信息
-
-        //4、商品的积分信息
-        orderItemEntity.setGiftGrowth(items.getPrice().multiply(new BigDecimal(items.getCount())).intValue());
-        orderItemEntity.setGiftIntegration(items.getPrice().multiply(new BigDecimal(items.getCount())).intValue());
-
-        //5、订单项的价格信息
-        orderItemEntity.setPromotionAmount(BigDecimal.ZERO);
-        orderItemEntity.setCouponAmount(BigDecimal.ZERO);
-        orderItemEntity.setIntegrationAmount(BigDecimal.ZERO);
-
-        //当前订单项的实际金额.总额 - 各种优惠价格
-        //原来的价格
-        BigDecimal origin = orderItemEntity.getSkuPrice().multiply(new BigDecimal(orderItemEntity.getSkuQuantity().toString()));
-        //原价减去优惠价得到最终的价格
-        BigDecimal subtract = origin.subtract(orderItemEntity.getCouponAmount())
-                .subtract(orderItemEntity.getPromotionAmount())
-                .subtract(orderItemEntity.getIntegrationAmount());
-        orderItemEntity.setRealAmount(subtract);
-
-        return orderItemEntity;
-    }
-
-
-    /**
-     * 处理支付宝的支付结果
+     * 获取订单支付的详细信息
      *
+     * @param orderSn 订单号
      */
-    @Transactional(rollbackFor = Exception.class)
     @Override
-    public String handlePayResult(PayAsyncVo asyncVo) {
-
-        //保存交易流水信息
-        PaymentInfoEntity paymentInfo = new PaymentInfoEntity();
-        paymentInfo.setOrderSn(asyncVo.getOut_trade_no());
-        paymentInfo.setAlipayTradeNo(asyncVo.getTrade_no());
-        paymentInfo.setTotalAmount(new BigDecimal(asyncVo.getBuyer_pay_amount()));
-        paymentInfo.setSubject(asyncVo.getBody());
-        paymentInfo.setPaymentStatus(asyncVo.getTrade_status());
-        paymentInfo.setCreateTime(new Date());
-        paymentInfo.setCallbackTime(asyncVo.getNotify_time());
-        //添加到数据库中
-        this.paymentInfoService.save(paymentInfo);
-
-        //修改订单状态
-        //获取当前状态
-        String tradeStatus = asyncVo.getTrade_status();
-
-        if (tradeStatus.equals("TRADE_SUCCESS") || tradeStatus.equals("TRADE_FINISHED")) {
-            //支付成功状态
-            String orderSn = asyncVo.getOut_trade_no(); //获取订单号
-            this.updateOrderStatus(orderSn,OrderStatusEnum.PAYED.getCode(),PayConstant.ALIPAY);
-        }
-        return "success";
-    }
-
-
-    /**
-     * 修改订单状态
-     * @param orderSn
-     * @param code
-     */
-    private void updateOrderStatus(String orderSn, Integer code,Integer payType) {
-
-        this.baseMapper.updateOrderStatus(orderSn,code,payType);
+    public PayVO getOrderPay(String orderSn) {
+        // 查询订单
+        OrderEntity order = this.getOrderByOrderSn(orderSn);
+        // 查询所有订单项
+        OrderItemEntity item = orderItemService.list(new QueryWrapper<OrderItemEntity>()
+                .eq("order_sn", orderSn)).get(0);
+        PayVO result = new PayVO();
+        BigDecimal amount = order.getPayAmount().setScale(2, BigDecimal.ROUND_UP);// 总金额
+        result.setTotal_amount(amount.toString());
+        result.setOut_trade_no(orderSn);
+        result.setSubject(item.getSkuName());
+        result.setBody(item.getSkuAttrsVals());
+        return result;
     }
 
     /**
-     * 微信异步通知结果
-     * @param notifyData
-     * @return
+     * 处理支付回调
+     *
+     * @param targetOrderStatus 目标状态
      */
     @Override
-    public String asyncNotify(String notifyData) {
+    public void handlePayResult(Integer targetOrderStatus, Integer payCode, PaymentInfoEntity paymentInfo) {
+        // 保存交易流水信息
+        paymentInfoService.save(paymentInfo);
 
-        //签名效验
-        PayResponse payResponse = bestPayService.asyncNotify(notifyData);
-        log.info("payResponse={}",payResponse);
-
-        //2.金额效验（从数据库查订单）
-        OrderEntity orderEntity = this.getOrderByOrderSn(payResponse.getOrderId());
-
-        //如果查询出来的数据是null的话
-        //比较严重(正常情况下是不会发生的)发出告警：钉钉、短信
-        if (orderEntity == null) {
-            //TODO 发出告警，钉钉，短信
-            throw new RuntimeException("通过订单编号查询出来的结果是null");
+        // 修改订单状态
+        if (OrderConstant.OrderStatusEnum.PAYED.getCode().equals(targetOrderStatus)) {
+            // 支付成功状态
+            String orderSn = paymentInfo.getOrderSn();
+            baseMapper.updateOrderStatus(orderSn, targetOrderStatus, payCode);
         }
-
-        //判断订单状态状态是否为已支付或者是已取消,如果不是订单状态不是已支付状态
-        Integer status = orderEntity.getStatus();
-        if (status.equals(OrderStatusEnum.PAYED.getCode()) || status.equals(OrderStatusEnum.CANCLED.getCode())) {
-            throw new RuntimeException("该订单已失效,orderNo=" + payResponse.getOrderId());
-        }
-
-        /*//判断金额是否一致,Double类型比较大小，精度问题不好控制
-        if (orderEntity.getPayAmount().compareTo(BigDecimal.valueOf(payResponse.getOrderAmount())) != 0) {
-            //TODO 告警
-            throw new RuntimeException("异步通知中的金额和数据库里的不一致,orderNo=" + payResponse.getOrderId());
-        }*/
-
-        //3.修改订单支付状态
-        //支付成功状态
-        String orderSn = orderEntity.getOrderSn();
-        this.updateOrderStatus(orderSn,OrderStatusEnum.PAYED.getCode(),PayConstant.WXPAY);
-
-        //4.告诉微信不要再重复通知了
-        return "<xml>\n" +
-                "  <return_code><![CDATA[SUCCESS]]></return_code>\n" +
-                "  <return_msg><![CDATA[OK]]></return_msg>\n" +
-                "</xml>";
     }
 
-
     /**
-     * 创建秒杀单
-     * @param orderTo
+     * 创建秒杀订单
+     * @param order 秒杀订单信息
      */
     @Override
-    public void createSeckillOrder(SeckillOrderTo orderTo) {
-
-        //TODO 保存订单信息
+    public void createSeckillOrder(SeckillOrderTO order) {
+        // 1.创建订单
         OrderEntity orderEntity = new OrderEntity();
-        orderEntity.setOrderSn(orderTo.getOrderSn());
-        orderEntity.setMemberId(orderTo.getMemberId());
+        orderEntity.setOrderSn(order.getOrderSn());
+        orderEntity.setMemberId(order.getMemberId());
         orderEntity.setCreateTime(new Date());
-        BigDecimal totalPrice = orderTo.getSeckillPrice().multiply(BigDecimal.valueOf(orderTo.getNum()));
-        orderEntity.setPayAmount(totalPrice);
+        BigDecimal totalPrice = order.getSeckillPrice().multiply(BigDecimal.valueOf(order.getNum()));// 应付总额
+        orderEntity.setTotalAmount(totalPrice);// 订单总额
+        orderEntity.setPayAmount(totalPrice);// 应付总额
         orderEntity.setStatus(OrderStatusEnum.CREATE_NEW.getCode());
-
-        //保存订单
+        // 保存订单
         this.save(orderEntity);
 
-        //保存订单项信息
+        // 2.创建订单项信息
         OrderItemEntity orderItem = new OrderItemEntity();
-        orderItem.setOrderSn(orderTo.getOrderSn());
+        orderItem.setOrderSn(order.getOrderSn());
         orderItem.setRealAmount(totalPrice);
+        orderItem.setSkuQuantity(order.getNum());
 
-        orderItem.setSkuQuantity(orderTo.getNum());
-
-        //保存商品的spu信息
-        R spuInfo = productFeignService.getSpuInfoBySkuId(orderTo.getSkuId());
-        SpuInfoVo spuInfoData = spuInfo.getData("data", new TypeReference<SpuInfoVo>() {
+        // 保存商品的spu信息
+        R r = productFeignService.getSpuInfoBySkuId(order.getSkuId());
+        SpuInfoTO spuInfo = r.getData(new TypeReference<SpuInfoTO>() {
         });
-        orderItem.setSpuId(spuInfoData.getId());
-        orderItem.setSpuName(spuInfoData.getSpuName());
-        orderItem.setSpuBrand(spuInfoData.getBrandName());
-        orderItem.setCategoryId(spuInfoData.getCatalogId());
-
-        //保存订单项数据
+        orderItem.setSpuId(spuInfo.getId());
+        orderItem.setSpuName(spuInfo.getSpuName());
+        orderItem.setSpuBrand(spuInfo.getBrandName());
+        orderItem.setCategoryId(spuInfo.getCatalogId());
+        // 保存订单项数据
         orderItemService.save(orderItem);
     }
-
-
-    public static void main(String[] args) {
-        String orderSn = IdWorker.getTimeId().substring(0,16);
-        System.out.println(orderSn);
-    }
-
 }

@@ -5,6 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
+ * 营销模块
  * @Description:
  * @Created: with IntelliJ IDEA.
  * @author: wanzenghui
@@ -15,8 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public interface CouponFeignService {
 
     /**
-     * 查询最近三天需要参加秒杀商品的信息
-     * @return
+     * 查询最近三天需要参加秒杀的场次+商品
      */
     @GetMapping(value = "/coupon/seckillsession/Lates3DaySession")
     R getLates3DaySession();

@@ -12,8 +12,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * @Description: 自定义阻塞返回方法
- **/
+ * @Description: 自定义网关限流返回
+ */
 @Component
 public class SentinelGatewayConfig {
 

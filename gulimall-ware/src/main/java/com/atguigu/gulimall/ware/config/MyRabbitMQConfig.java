@@ -1,102 +1,80 @@
 package com.atguigu.gulimall.ware.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.Exchange;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
 
 /**
- * @Description:
- * @Created: with IntelliJ IDEA.
- * @author: wanzenghui
- * @createTime: 2020-07-06 20:02
- **/
-
+ * 创建队列，交换机，延时队列，绑定关系 的configuration
+ * 1.Broker中的Queue、Exchange、Binding不存在的情况下，会自动创建（在RabbitMQ），不会重复创建覆盖
+ * 2.懒加载，只有第一次使用的时候才会创建（例如监听队列）
+ */
 @Configuration
 public class MyRabbitMQConfig {
 
-    /**
-     * 使用JSON序列化机制，进行消息转换
-     * @return
-     */
-    @Bean
-    public MessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
-    }
-
-    // @RabbitListener(queues = "stock.release.stock.queue")
-    // public void handle(Message message) {
-    //
-    // }
+    ///**
+    // * 用于首次创建队列、交换机、绑定关系的监听
+    // * @param message
+    // */
+    //@RabbitListener(queues = "stock.release.stock.queue")
+    //public void handle(Message message) {
+    //}
 
     /**
-     * 库存服务默认的交换机
-     * @return
+     * 交换机
+     * Topic，可以绑定多个队列
      */
     @Bean
     public Exchange stockEventExchange() {
         //String name, boolean durable, boolean autoDelete, Map<String, Object> arguments
-        TopicExchange topicExchange = new TopicExchange("stock-event-exchange", true, false);
-        return topicExchange;
+        return new TopicExchange("stock-event-exchange", true, false);
     }
 
     /**
-     * 普通队列
-     * @return
+     * 死信队列
+     * 释放库存
      */
     @Bean
     public Queue stockReleaseStockQueue() {
         //String name, boolean durable, boolean exclusive, boolean autoDelete, Map<String, Object> arguments
-        Queue queue = new Queue("stock.release.stock.queue", true, false, false);
-        return queue;
+        return new Queue("stock.release.stock.queue", true, false, false);
     }
 
-
     /**
-     * 延迟队列
-     * @return
+     * 延时队列
+     * 锁定库存
      */
     @Bean
     public Queue stockDelay() {
-
         HashMap<String, Object> arguments = new HashMap<>();
         arguments.put("x-dead-letter-exchange", "stock-event-exchange");
         arguments.put("x-dead-letter-routing-key", "stock.release");
-        // 消息过期时间 2分钟
-        arguments.put("x-message-ttl", 120000);
-
-        Queue queue = new Queue("stock.delay.queue", true, false, false,arguments);
-        return queue;
+        // 消息过期时间 1.5分钟
+        arguments.put("x-message-ttl", 90000);
+        return new Queue("stock.delay.queue", true, false, false, arguments);
     }
 
-
     /**
-     * 交换机与普通队列绑定
-     * @return
+     * 绑定：交换机与死信队列
+     * 释放库存
      */
     @Bean
     public Binding stockLocked() {
         //String destination, DestinationType destinationType, String exchange, String routingKey,
         // 			Map<String, Object> arguments
-        Binding binding = new Binding("stock.release.stock.queue",
+        return new Binding("stock.release.stock.queue",
                 Binding.DestinationType.QUEUE,
                 "stock-event-exchange",
                 "stock.release.#",
                 null);
-
-        return binding;
     }
 
-
     /**
-     * 交换机与延迟队列绑定
-     * @return
+     * 绑定：交换机与延时队列
+     * 锁定库存
      */
     @Bean
     public Binding stockLockedBinding() {
@@ -106,6 +84,4 @@ public class MyRabbitMQConfig {
                 "stock.locked",
                 null);
     }
-
-
 }

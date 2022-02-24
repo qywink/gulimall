@@ -1,13 +1,13 @@
 package com.atguigu.gulimall.auth.controller;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.atguigu.common.constant.AuthServerConstant;
+import com.atguigu.common.constant.auth.AuthConstant;
 import com.atguigu.common.utils.HttpUtils;
 import com.atguigu.common.utils.R;
-import com.atguigu.common.vo.MemberResponseVo;
-import com.atguigu.gulimall.auth.feign.MemberFeignService;
-import com.atguigu.gulimall.auth.vo.SocialUser;
+import com.atguigu.common.vo.auth.MemberResponseVO;
+import com.atguigu.common.vo.auth.WBSocialUserVO;
+import com.atguigu.gulimall.auth.agent.MemberAgentService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
@@ -16,64 +16,75 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Description: 处理社交登录请求
- **/
-
+ * 社交登录
+ *
+ * @Author: wanzenghui
+ * @Date: 2021/11/26 22:26
+ */
 @Slf4j
 @Controller
 public class OAuth2Controller {
 
     @Autowired
-    private MemberFeignService memberFeignService;
+    MemberAgentService memberAgentService;
 
-    @GetMapping(value = "/oauth2.0/weibo/success")
-    public String weibo(@RequestParam("code") String code, HttpSession session) throws Exception {
-
+    /**
+     * 授权回调页
+     *
+     * @param code 根据code换取Access Token，且code只能兑换一次Access Token
+     */
+    @GetMapping("/oauth2.0/weibo/success")
+    public String weibo(@RequestParam("code") String code, HttpSession session, HttpServletResponse servletResponse) throws Exception {
+        // 1.根据code换取Access Token
+        Map<String, String> headers = new HashMap<>();
+        Map<String, String> querys = new HashMap<>();
         Map<String, String> map = new HashMap<>();
-        map.put("client_id","2129105835");
-        map.put("client_secret","201b8aa95794dbb6d52ff914fc8954dc");
-        map.put("grant_type","authorization_code");
-        map.put("redirect_uri","http://auth.gulimall.com/oauth2.0/weibo/success");
-        map.put("code",code);
+        map.put("client_id", "2129105835");
+        map.put("client_secret", "201b8aa95794dbb6d52ff914fc8954dc");
+        map.put("grant_type", "authorization_code");
+        map.put("redirect_uri", "http://auth.gulimall.com/oauth2.0/weibo/success");
+        map.put("code", code);
+        HttpResponse response = HttpUtils.doPost("https://api.weibo.com", "/oauth2/access_token", headers, querys, map);
 
-        //1、根据code换取access_token
-        HttpResponse response = HttpUtils.doPost("https://api.weibo.com", "/oauth2/access_token", "post", new HashMap<>(), map, new HashMap<>());
-
-        //2、处理
+        // 2.处理请求返回
         if (response.getStatusLine().getStatusCode() == 200) {
-            //获取到了access_token
-            String json = EntityUtils.toString(response.getEntity());// 获取到json串
-            //String json = JSON.toJSONString(response.getEntity());
-            SocialUser socialUser = JSON.parseObject(json, SocialUser.class);
+            // 换取Access_Token成功
+            String jsonString = EntityUtils.toString(response.getEntity());
+            WBSocialUserVO user = JSONObject.parseObject(jsonString, WBSocialUserVO.class);
 
-            //知道了哪个社交用户
-            //1）、当前用户如果是第一次进网站，自动注册进来（为当前社交用户生成一个会员信息，以后这个社交账号就对应指定的会员）
-            //登录或者注册这个社交用户
-            System.out.println("登录后用code换取的token值：" + socialUser.getAccess_token());
-            //调用远程服务
-            R oauthLogin = memberFeignService.oauthLogin(socialUser);
-            if (oauthLogin.getCode() == 0) {
-                MemberResponseVo data = oauthLogin.getData("data", new TypeReference<MemberResponseVo>() {});
-                log.info("登录成功：用户信息：\n{}",data.toString());
+            // 首次登录自动注册（为当前社交登录用户生成一个会员账号信息，以后这个社交账户就会对应指定的会员）
+            // 非首次登录则直接登录成功
+            R r = memberAgentService.oauthLogin(user);
+            if (r.getCode() == 0) {
+                // 登录成功
+                MemberResponseVO loginUser = r.getData(new TypeReference<MemberResponseVO>() {
+                });
+                log.info("登录成功：用户：{}", loginUser.toString());
 
-                //1、第一次使用session，命令浏览器保存卡号，JSESSIONID这个cookie
-                //以后浏览器访问哪个网站就会带上这个网站的cookie
-                //TODO 1、默认发的令牌。当前域（解决子域session共享问题）
-                //TODO 2、使用JSON的序列化方式来序列化对象到Redis中
-                session.setAttribute(AuthServerConstant.LOGIN_USER, data);
-
-                //2、登录成功跳回首页
+                // 3.信息存储到session中，并且放大作用域（指定domain=父级域名）
+                session.setAttribute(AuthConstant.LOGIN_USER, loginUser);
+                // 首次使用session时，spring会自动颁发cookie设置domain，所以这里手动设置cookie很麻烦，采用springsession的方式颁发父级域名的domain权限
+//                Cookie cookie = new Cookie("JSESSIONID", loginUser.getId().toString());
+//                cookie.setDomain("gulimall.com");
+//                servletResponse.addCookie(cookie);
+                // 跳回首页
                 return "redirect:http://gulimall.com";
             } else {
+                // 登录失败，调回登录页
                 return "redirect:http://auth.gulimall.com/login.html";
             }
         } else {
+            // 换取Access_Token成功
             return "redirect:http://auth.gulimall.com/login.html";
         }
     }
+
+
 }

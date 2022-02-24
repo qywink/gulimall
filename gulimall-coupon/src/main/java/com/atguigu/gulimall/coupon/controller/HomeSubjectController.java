@@ -1,14 +1,20 @@
 package com.atguigu.gulimall.coupon.controller;
 
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.common.utils.R;
-import com.atguigu.gulimall.coupon.entity.HomeSubjectEntity;
-import com.atguigu.gulimall.coupon.service.HomeSubjectService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.Arrays;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.atguigu.gulimall.coupon.entity.HomeSubjectEntity;
+import com.atguigu.gulimall.coupon.service.HomeSubjectService;
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.utils.R;
+
 
 
 /**
@@ -16,7 +22,7 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 @RestController
 @RequestMapping("coupon/homesubject")
@@ -28,7 +34,6 @@ public class HomeSubjectController {
      * 列表
      */
     @RequestMapping("/list")
-    //@RequiresPermissions("coupon:homesubject:list")
     public R list(@RequestParam Map<String, Object> params){
         PageUtils page = homeSubjectService.queryPage(params);
 
@@ -40,7 +45,6 @@ public class HomeSubjectController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    //@RequiresPermissions("coupon:homesubject:info")
     public R info(@PathVariable("id") Long id){
 		HomeSubjectEntity homeSubject = homeSubjectService.getById(id);
 
@@ -50,7 +54,7 @@ public class HomeSubjectController {
     /**
      * 保存
      */
-    @PostMapping("/save")
+    @RequestMapping("/save")
     public R save(@RequestBody HomeSubjectEntity homeSubject){
 		homeSubjectService.save(homeSubject);
 
@@ -71,7 +75,6 @@ public class HomeSubjectController {
      * 删除
      */
     @RequestMapping("/delete")
-    //@RequiresPermissions("coupon:homesubject:delete")
     public R delete(@RequestBody Long[] ids){
 		homeSubjectService.removeByIds(Arrays.asList(ids));
 

@@ -10,7 +10,12 @@ import java.util.List;
 
 @FeignClient("gulimall-search")
 public interface SearchFeignService {
-    // 上架商品
+
+    /**
+     * 上架商品
+     */
     @PostMapping("/search/save/product")
     R productStatusUp(@RequestBody List<SkuEsModel> skuEsModels);
+
+
 }

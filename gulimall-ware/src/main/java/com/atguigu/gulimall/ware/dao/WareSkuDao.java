@@ -6,46 +6,50 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 商品库存
  * 
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:37:46
+ * @date 2021-09-02 22:59:35
  */
 @Mapper
 public interface WareSkuDao extends BaseMapper<WareSkuEntity> {
+
     /**
-     * 添加入库信息
-     * @param skuId
-     * @param wareId
-     * @param skuNum
+     * 采购成功，商品入库
      */
     void addStock(@Param("skuId") Long skuId, @Param("wareId") Long wareId, @Param("skuNum") Integer skuNum);
 
-    Long getSkuStock(Long skuId);
+    /**
+     * 查询sku是否有库存
+     */
+    Long getSkusStock(Long skuId);
 
     /**
-     * 查询这个商品在哪里有库存
-     * @param skuId
+     * 查询商品库存充足的仓库
+     * @param skuIds 商品项ID集合
      * @return
      */
-    List<Long> listWareIdHasSkuStock(@Param("skuId") Long skuId);
+    List<WareSkuEntity> selectListHasSkuStock(@Param("skuIds") Set<Long> skuIds);
+
     /**
      * 锁定库存
-     * @param skuId
-     * @param wareId
-     * @param num
-     * @return
+     * @param skuId 商品项ID
+     * @param wareId 仓库ID
+     * @param count 待锁定库存数
+     * @return 1成功  0失败
      */
-    Long lockSkuStock(@Param("skuId") Long skuId, @Param("wareId") Long wareId, @Param("num") Integer num);
+    Long lockSkuStock(@Param("skuId") Long skuId, @Param("wareId") Long wareId, @Param("count") Integer count);
 
     /**
      * 解锁库存
      * @param skuId
      * @param wareId
      * @param num
+     * @param taskDetailId
      */
-    void unLockStock(@Param("skuId") Long skuId, @Param("wareId") Long wareId, @Param("num") Integer num);
+    void unLockStock(@Param("skuId") Long skuId, @Param("wareId") Long wareId, @Param("count") Integer count);
 }

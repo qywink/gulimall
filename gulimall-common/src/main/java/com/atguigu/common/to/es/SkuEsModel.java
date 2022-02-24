@@ -14,7 +14,7 @@ public class SkuEsModel {
     private String skuImg;
     private Long saleCount;
     private Boolean hasStock;
-    private Long hotScore;
+    private Long hotScore;// 热度评分
     private Long brandId;
     private Long catalogId;
     private String brandName;

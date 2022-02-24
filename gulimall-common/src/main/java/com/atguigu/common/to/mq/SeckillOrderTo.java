@@ -3,8 +3,11 @@ package com.atguigu.common.to.mq;
 import lombok.Data;
 import java.math.BigDecimal;
 
+/**
+ * 秒杀订单
+ */
 @Data
-public class SeckillOrderTo {
+public class SeckillOrderTO {
 
     /**
      * 订单号

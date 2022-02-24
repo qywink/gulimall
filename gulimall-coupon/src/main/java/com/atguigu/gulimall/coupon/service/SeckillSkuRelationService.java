@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 public interface SeckillSkuRelationService extends IService<SeckillSkuRelationEntity> {
 

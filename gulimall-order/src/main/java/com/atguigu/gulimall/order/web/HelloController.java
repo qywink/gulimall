@@ -1,6 +1,6 @@
 package com.atguigu.gulimall.order.web;
 
-import com.atguigu.gulimall.order.entity.OrderEntity;
+import com.atguigu.common.entity.order.OrderEntity;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,6 +20,16 @@ public class HelloController {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    /**
+     * 测试页面环境是否搭建成功
+     * order.gulimall.com/
+     */
+    @GetMapping(value = "/{page}.html")
+    public String listPage(@PathVariable("page") String page) {
+
+        return page;
+    }
+
     @ResponseBody
     @GetMapping(value = "/test/createOrder")
     public String createOrderTest() {
@@ -33,12 +43,6 @@ public class HelloController {
         rabbitTemplate.convertAndSend("order-event-exchange","order.create.order",orderEntity);
 
         return "ok";
-    }
-
-    @GetMapping(value = "/{page}.html")
-    public String listPage(@PathVariable("page") String page) {
-
-        return page;
     }
 
 }

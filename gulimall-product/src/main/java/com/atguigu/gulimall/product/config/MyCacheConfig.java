@@ -10,6 +10,9 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+/**
+ * springcach配置
+ */
 @EnableConfigurationProperties(CacheProperties.class)
 @EnableCaching
 @Configuration
@@ -36,7 +39,8 @@ public class MyCacheConfig {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
         config = config.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()));
         config = config.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
-        // 配置文件生效：RedisCacheConfiguration
+
+        // 当自己往IOC注入了RedisCacheConfiguration配置类时，以下参数全都失效，需要手动设置
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
         if (redisProperties.getTimeToLive() != null) {
             config = config.entryTtl(redisProperties.getTimeToLive());

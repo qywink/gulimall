@@ -1,12 +1,15 @@
 package com.atguigu.gulimall.order.feign;
 
-import com.atguigu.gulimall.order.vo.MemberAddressVo;
+import com.atguigu.common.vo.order.MemberAddressVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
+/**
+ * 会员系统
+ */
 @FeignClient("gulimall-member")
 public interface MemberFeignService {
 
@@ -16,5 +19,5 @@ public interface MemberFeignService {
      * @return
      */
     @GetMapping(value = "/member/memberreceiveaddress/{memberId}/address")
-    List<MemberAddressVo> getAddress(@PathVariable("memberId") Long memberId);
+    List<MemberAddressVO> getAddress(@PathVariable("memberId") Long memberId);
 }

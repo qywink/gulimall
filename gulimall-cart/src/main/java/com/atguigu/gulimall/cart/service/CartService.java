@@ -1,62 +1,57 @@
 package com.atguigu.gulimall.cart.service;
 
-import com.atguigu.gulimall.cart.vo.CartItemVo;
-import com.atguigu.gulimall.cart.vo.CartVo;
+import com.atguigu.common.vo.cart.CartItemVO;
+import com.atguigu.common.vo.cart.CartVO;
+
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
- * 购物车服务
+ * 购物车
+ * @Author: wanzenghui
+ * @Date: 2021/12/4 23:53
  */
 public interface CartService {
 
     /**
-     * 将商品添加至购物车
+     * 添加sku商品到购物车
      */
-    CartItemVo addToCart(Long skuId, Integer num) throws ExecutionException, InterruptedException;
+    CartItemVO addToCart(Long skuId, Integer num) throws ExecutionException, InterruptedException;
 
     /**
-     * 获取购物车某个购物项
+     * 根据skuId获取购物车商品信息
      */
-    CartItemVo getCartItem(Long skuId);
+    CartItemVO getCartItem(Long skuId);
 
     /**
-     * 获取购物车里面的信息
-     * @return
+     * 获取购物车列表
      */
-    CartVo getCart() throws ExecutionException, InterruptedException;
+    CartVO getCart() throws ExecutionException, InterruptedException;
 
     /**
-     * 清空购物车的数据
-     * @param cartKey
+     * 清空购物车
      */
-    public void clearCartInfo(String cartKey);
+    void clearCart(String cartKey);
 
     /**
-     * 勾选购物项
-     * @param skuId
-     * @param check
+     * 更改购物车商品选中状态
      */
     void checkItem(Long skuId, Integer check);
 
     /**
      * 改变商品数量
-     * @param skuId
-     * @param num
      */
     void changeItemCount(Long skuId, Integer num);
 
-
     /**
      * 删除购物项
-     * @param skuId
      */
     void deleteIdCartInfo(Integer skuId);
 
     /**
-     * 获取当前用户的购物车所有商品项
-     * @return
+     * 获取当前用户的购物车所有选中的商品项
+     *  1.从redis中获取所有选中的商品项
+     *  2.获取mysql最新的商品价格信息，替换redis中的价格信息
      */
-    List<CartItemVo> getUserCartItems();
-
+    List<CartItemVO> getUserCartItems();
 }

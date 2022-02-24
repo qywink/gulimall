@@ -2,10 +2,10 @@ package com.atguigu.gulimall.product.service.impl;
 
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
+import com.atguigu.common.vo.product.AttrGroupRelationVO;
 import com.atguigu.gulimall.product.dao.AttrAttrgroupRelationDao;
-import com.atguigu.gulimall.product.entity.AttrAttrgroupRelationEntity;
+import com.atguigu.common.entity.product.AttrAttrgroupRelationEntity;
 import com.atguigu.gulimall.product.service.AttrAttrgroupRelationService;
-import com.atguigu.gulimall.product.vo.AttrGroupRelationVo;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -31,7 +31,7 @@ public class AttrAttrgroupRelationServiceImpl extends ServiceImpl<AttrAttrgroupR
     }
 
     @Override
-    public void saveBatch(List<AttrGroupRelationVo> vos) {
+    public void saveBatch(List<AttrGroupRelationVO> vos) {
         List<AttrAttrgroupRelationEntity> relationEntities = vos.stream().map(item -> {
             AttrAttrgroupRelationEntity relationEntity = new AttrAttrgroupRelationEntity();
             BeanUtils.copyProperties(item, relationEntity);

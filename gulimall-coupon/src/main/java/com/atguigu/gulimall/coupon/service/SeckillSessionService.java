@@ -12,12 +12,15 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- *
+ * @date 2021-09-02 22:43:18
  */
 public interface SeckillSessionService extends IService<SeckillSessionEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
 
+    /**
+     * 查询最近三天需要秒杀的场次
+     */
     List<SeckillSessionEntity> getLates3DaySession();
 }
 

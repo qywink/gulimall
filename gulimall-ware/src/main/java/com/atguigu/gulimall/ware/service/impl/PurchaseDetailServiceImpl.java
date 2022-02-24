@@ -19,14 +19,12 @@ import java.util.Map;
 public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, PurchaseDetailEntity> implements PurchaseDetailService {
 
     /**
-     * 采购需求
-     * @param params
-     * @return
+     * 商品库存（可根据skuId、wareId查找）
      */
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
-        // key
-        // status:0 状态
+        // key：采购单id  or  skuid
+        // status：0 采购需求状态
         // wareId：1 仓库Id
         QueryWrapper<PurchaseDetailEntity> queryWrapper = new QueryWrapper<>();
         String key = (String) params.get("key");
@@ -55,10 +53,11 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
     }
 
     /**
-     * 根据采购单查询出所有关联的采购需求
+     * 根据采购单ID查询采购需求
      */
     @Override
-    public List<PurchaseDetailEntity> listDetailByPurchaseId(Long id) {
-        return this.list(new QueryWrapper<PurchaseDetailEntity>().eq("purchase_id", id));
+    public List<PurchaseDetailEntity> listDetailByPurchaseId(Long purchaseId) {
+        return list(new QueryWrapper<PurchaseDetailEntity>().eq("purchase_id", purchaseId));
     }
+
 }

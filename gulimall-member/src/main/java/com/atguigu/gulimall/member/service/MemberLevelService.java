@@ -11,10 +11,15 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:18:09
+ * @date 2021-09-02 22:56:37
  */
 public interface MemberLevelService extends IService<MemberLevelEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
+
+    /**
+     * 查询默认等级
+     */
+    MemberLevelEntity getDefaultLevel();
 }
 

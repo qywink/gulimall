@@ -3,18 +3,19 @@ package com.atguigu.gulimall.product.service.impl;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.ProductAttrValueDao;
-import com.atguigu.gulimall.product.entity.ProductAttrValueEntity;
-import com.atguigu.gulimall.product.entity.SpuInfoEntity;
+import com.atguigu.common.entity.product.AttrEntity;
+import com.atguigu.common.entity.product.ProductAttrValueEntity;
+import com.atguigu.gulimall.product.service.AttrService;
 import com.atguigu.gulimall.product.service.ProductAttrValueService;
-import com.atguigu.gulimall.product.service.SpuInfoService;
+import com.atguigu.common.vo.product.BaseAttrs;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueDao, ProductAttrValueEntity> implements ProductAttrValueService {
 
     @Autowired
-    SpuInfoService spuInfoService;
+    AttrService attrService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -37,34 +38,47 @@ public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueDao
     }
 
     @Override
-    public void saveProductAttr(List<ProductAttrValueEntity> collect) {
-        this.saveBatch(collect);
-    }
+    public void saveProductAttrValue(Long spuId, List<BaseAttrs> baseAttrs) {
+        if (!CollectionUtils.isEmpty(baseAttrs)) {
+            // 根据ids查询属性map，用于封装冗余数据
+            List<Long> attrIds = baseAttrs.stream().map(baseAttr -> baseAttr.getAttrId()).collect(Collectors.toList());
+            Map<Long, AttrEntity> attrMap = attrService.getBatchIds(attrIds).stream().collect(Collectors.toMap(key -> key.getAttrId(), val -> val));
+            // 封装
+            List<ProductAttrValueEntity> collect = baseAttrs.stream().map(attr -> {
+                ProductAttrValueEntity product = new ProductAttrValueEntity();
+                product.setAttrId(attr.getAttrId());
+                product.setAttrName(attrMap.get(attr.getAttrId()).getAttrName());
+                product.setAttrValue(attr.getAttrValues());
+                product.setQuickShow(attr.getShowDesc());
+                product.setSpuId(spuId);
 
-    @Override
-    public List<ProductAttrValueEntity> baseAttrlistforspu(Long spuId) {
-        return this.getBaseMapper().selectList(new QueryWrapper<ProductAttrValueEntity>().eq("spu_id", spuId));
+                return product;
+            }).collect(Collectors.toList());
+            // 批量保存
+            this.saveBatch(collect);
+        }
     }
 
     /**
-     * 修改商品规格
-     * @param spuId     商品id：spuId
-     * @param entities  基本规格
+     * 获取spu规格
      */
+    @Override
+    public List<ProductAttrValueEntity> baseAttrlistforspu(Long spuId) {
+        return this.baseMapper.selectList(new QueryWrapper<ProductAttrValueEntity>().eq("spu_id", spuId));
+    }
+
     @Transactional
     @Override
     public void updateSpuAttr(Long spuId, List<ProductAttrValueEntity> entities) {
-        // 1、删除之前设置的规格参数
-        this.remove(new QueryWrapper<ProductAttrValueEntity>().eq("spu_id", spuId));
-        // 2、新增规格参数
+        // 1.删除
+        this.baseMapper.delete(new QueryWrapper<ProductAttrValueEntity>().eq("spu_id", spuId));
+        // 2.插入
         List<ProductAttrValueEntity> collect = entities.stream().map(item -> {
+            item.setId(null);
             item.setSpuId(spuId);
             return item;
         }).collect(Collectors.toList());
         this.saveBatch(collect);
-        SpuInfoEntity spuInfoEntity = new SpuInfoEntity();
-        spuInfoEntity.setId(spuId);
-        spuInfoEntity.setUpdateTime(new Date());
-        spuInfoService.updateById(spuInfoEntity);
     }
+
 }

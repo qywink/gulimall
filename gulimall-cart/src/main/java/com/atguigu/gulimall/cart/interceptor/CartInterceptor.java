@@ -1,10 +1,12 @@
 package com.atguigu.gulimall.cart.interceptor;
 
-import com.atguigu.common.constant.AuthServerConstant;
-import com.atguigu.common.constant.CartConstant;
-import com.atguigu.common.vo.MemberResponseVo;
-import com.atguigu.gulimall.cart.to.UserInfoTo;
-import org.springframework.util.StringUtils;
+import com.atguigu.common.constant.auth.AuthConstant;
+import com.atguigu.common.constant.cart.CartConstant;
+import com.atguigu.common.to.cart.UserInfoTO;
+import com.atguigu.common.utils.ObjectUtil;
+import com.atguigu.common.vo.auth.MemberResponseVO;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -12,67 +14,62 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * 在执行目标方法之前，判断用户的登录状态.并封装传递给controller目标请求
-        */
+ * 判断用户登录状态，并封装用户信息传递给controller
+ *
+ * @Author: wanzenghui
+ * @Date: 2021/12/5 0:32
+ */
 public class CartInterceptor implements HandlerInterceptor {
-    public static ThreadLocal<UserInfoTo> toThreadLocal = new ThreadLocal<>();
 
-    /***
-     * 拦截所有请求给ThreadLocal封装UserInfoTo对象
-     * 1、从session中获取MemberResponseVo != null，登录状态，为UserInfoTo设置Id
-     * 2、从request中获取cookie，找到user-key的value，
-     * 目标方法执行之前：在ThreadLocal中存入用户信息【同一个线程共享数据】
-     * 从session中获取数据【使用session需要cookie中的GULISESSION 值】
-     */
+    public static ThreadLocal<UserInfoTO> threadLocal = new ThreadLocal<>();
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        UserInfoTo userInfoTo = new UserInfoTo();
+        // 获取会话信息，获取登录用户信息
         HttpSession session = request.getSession();
-        //获得当前登录用户的信息
-        MemberResponseVo memberResponseVo = (MemberResponseVo) session.getAttribute(AuthServerConstant.LOGIN_USER);
-        if (memberResponseVo != null) {
-            //用户登录了
-            userInfoTo.setUserId(memberResponseVo.getId());
+        MemberResponseVO attribute = (MemberResponseVO) session.getAttribute(AuthConstant.LOGIN_USER);
+        // 判断是否登录，并封装User对象给controller使用
+        UserInfoTO user = new UserInfoTO();
+        if (attribute != null) {
+            // 登录状态，封装用户ID，供controller使用
+            user.setUserId(attribute.getId());
         }
+        // 获取当前请求游客用户标识user-key
         Cookie[] cookies = request.getCookies();
-        if (cookies != null && cookies.length > 0) {
+        if (ArrayUtils.isNotEmpty(cookies)) {
             for (Cookie cookie : cookies) {
-                //user-key
-                String name = cookie.getName();
-                if (name.equals(CartConstant.TEMP_USER_COOKIE_NAME)) {
-                    userInfoTo.setUserKey(cookie.getValue());
-                    // 标识客户端已经存储了 user-key
-                    userInfoTo.setTempUser(true);
+                if (cookie.getName().equals(CartConstant.TEMP_USER_COOKIE_NAME)) {
+                    // 获取user-key值封装到user，供controller使用
+                    user.setUserKey(cookie.getValue());
+                    user.setTempUser(true);// 不需要重新分配
+                    break;
                 }
             }
         }
-        //如果没有临时用户一定分配一个临时用户
-        if (StringUtils.isEmpty(userInfoTo.getUserKey())) {
-            String uuid = UUID.randomUUID().toString();
-            userInfoTo.setUserKey(uuid);
+
+        // 判断当前是否存在游客用户标识
+        if (StringUtils.isBlank(user.getUserKey())) {
+            // 无游客标识，分配游客标识
+            user.setUserKey(UUID.randomUUID().toString());
         }
-        //目标方法执行之前
-        toThreadLocal.set(userInfoTo);
+
+        // 封装用户信息（登录状态userId非空，游客状态userId空）
+        threadLocal.set(user);
         return true;
     }
 
-
-    /**
-     * 业务执行之后，让浏览器保存临时用户user-key
-     */
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        // 获取当前用户的值
-        UserInfoTo userInfoTo = toThreadLocal.get();
-        // 1、判断是否登录；2、判断是否创建user-token的cookie
-        if (userInfoTo != null && !userInfoTo.isTempUser()) {
-            //创建一个cookie
-            Cookie cookie = new Cookie(CartConstant.TEMP_USER_COOKIE_NAME, userInfoTo.getUserKey());
-            cookie.setDomain("gulimall.com");
-            cookie.setMaxAge(CartConstant.TEMP_USER_COOKIE_TIMEOUT);
+        UserInfoTO user = threadLocal.get();
+        if (user != null && !user.isTempUser()) {
+            // 需要为客户端分配游客信息
+            Cookie cookie = new Cookie(CartConstant.TEMP_USER_COOKIE_NAME, user.getUserKey());
+            cookie.setDomain("gulimall.com");// 作用域
+            cookie.setMaxAge(CartConstant.TEMP_USER_COOKIE_TIMEOUT);// 过期时间
             response.addCookie(cookie);
         }
     }

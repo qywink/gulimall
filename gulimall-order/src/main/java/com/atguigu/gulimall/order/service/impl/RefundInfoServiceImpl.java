@@ -9,7 +9,7 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 
 import com.atguigu.gulimall.order.dao.RefundInfoDao;
-import com.atguigu.gulimall.order.entity.RefundInfoEntity;
+import com.atguigu.common.entity.order.RefundInfoEntity;
 import com.atguigu.gulimall.order.service.RefundInfoService;
 
 

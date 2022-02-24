@@ -1,27 +1,39 @@
 package com.atguigu.gulimall.auth.feign;
 
+import com.atguigu.common.to.member.MemberUserRegisterTO;
+import com.atguigu.common.to.member.WBSocialUserTO;
 import com.atguigu.common.utils.R;
-import com.atguigu.gulimall.auth.vo.SocialUser;
-import com.atguigu.gulimall.auth.vo.UserLoginVo;
-import com.atguigu.gulimall.auth.vo.UserRegisterVo;
+import com.atguigu.common.vo.auth.UserLoginVO;
+import com.atguigu.common.vo.auth.UserRegisterVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
-
+/**
+ * 会员服务
+ * @Author: wanzenghui
+ * @Date: 2021/11/28 19:52
+ */
 @FeignClient("gulimall-member")
 public interface MemberFeignService {
 
-    @PostMapping(value = "/member/member/register")
-    R register(@RequestBody UserRegisterVo vo);
+    /**
+     * 注册
+     */
+    @PostMapping("/member/member/regist")
+    R regist(@RequestBody UserRegisterVO user);
 
-    @PostMapping(value = "/member/member/login")
-    R login(@RequestBody UserLoginVo vo);
+    /**
+     * 登录
+     */
+    @PostMapping("/member/member/login")
+    R login(@RequestBody UserLoginVO vo);
 
-    @PostMapping(value = "/member/member/oauth2/login")
-    R oauthLogin(@RequestBody SocialUser socialUser) throws Exception;
+    /**
+     * 微博社交登录
+     */
+    @PostMapping("/member/member/weibo/oauth2/login")
+    public R oauthLogin(@RequestBody WBSocialUserTO user);
 
-    @PostMapping(value = "/member/member/weixin/login")
-    R weixinLogin(@RequestParam("accessTokenInfo") String accessTokenInfo);
+
 }

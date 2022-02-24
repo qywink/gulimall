@@ -1,10 +1,11 @@
 package com.atguigu.gulimall.order.service;
 
+import com.atguigu.common.entity.order.PaymentInfoEntity;
+import com.atguigu.common.to.mq.SeckillOrderTO;
+import com.atguigu.common.vo.order.*;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.atguigu.common.to.mq.SeckillOrderTo;
 import com.atguigu.common.utils.PageUtils;
-import com.atguigu.gulimall.order.entity.OrderEntity;
-import com.atguigu.gulimall.order.vo.*;
+import com.atguigu.common.entity.order.OrderEntity;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -12,69 +13,56 @@ import java.util.concurrent.ExecutionException;
 /**
  * 订单
  *
+ * @author wanzenghui
+ * @email lemon_wan@aliyun.com
+ * @date 2021-09-02 22:57:46
  */
 public interface OrderService extends IService<OrderEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
 
     /**
-     * 订单确认页返回需要用的数据
-     * @return
-     */
-    OrderConfirmVo confirmOrder() throws ExecutionException, InterruptedException;
-
-    /**
-     * 创建订单
-     * @param vo
-     * @return
-     */
-    SubmitOrderResponseVo submitOrder(OrderSubmitVo vo);
-
-    /**
-     * 按照订单号获取订单信息
-     * @param orderSn
-     * @return
-     */
-    OrderEntity getOrderByOrderSn(String orderSn);
-
-    /**
-     * 关闭订单
-     * @param orderEntity
-     */
-    void closeOrder(OrderEntity orderEntity);
-
-    /**
-     * 获取当前订单的支付信息
-     * @param orderSn
-     * @return
-     */
-    PayVo getOrderPay(String orderSn);
-
-    /**
-     * 查询当前用户所有订单数据
+     * 分页查询订单列表、订单详情
      * @param params
      * @return
      */
     PageUtils queryPageWithItem(Map<String, Object> params);
 
     /**
-     *支付宝异步通知处理订单数据
-     * @param asyncVo
-     * @return
+     * 获取订单详情
      */
-    String handlePayResult(PayAsyncVo asyncVo);
+    OrderEntity getOrderByOrderSn(String orderSn);
 
     /**
-     * 微信异步通知处理
-     * @param notifyData
+     * 获取结算页（confirm.html）VO数据
      */
-    String asyncNotify(String notifyData);
-
+    OrderConfirmVO OrderConfirmVO() throws Exception;
 
     /**
-     * 创建秒杀单
-     * @param orderTo
+     * 创建订单
      */
-    void createSeckillOrder(SeckillOrderTo orderTo);
+    SubmitOrderResponseVO submitOrder(OrderSubmitVO vo) throws Exception;
+
+    /**
+     * 关闭订单
+     */
+    void closeOrder(OrderEntity order);
+
+    /**
+     * 获取订单支付的详细信息
+     */
+    PayVO getOrderPay(String orderSn);
+
+    /**
+     * 处理支付回调
+     * @param targetOrderStatus 目标状态
+     */
+    void handlePayResult(Integer targetOrderStatus, Integer payCode, PaymentInfoEntity paymentInfo);
+
+    /**
+     * 创建秒杀订单
+     * @param order 秒杀订单信息
+     */
+    void createSeckillOrder(SeckillOrderTO order);
 }
 

@@ -9,7 +9,7 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 
 import com.atguigu.gulimall.order.dao.PaymentInfoDao;
-import com.atguigu.gulimall.order.entity.PaymentInfoEntity;
+import com.atguigu.common.entity.order.PaymentInfoEntity;
 import com.atguigu.gulimall.order.service.PaymentInfoService;
 
 

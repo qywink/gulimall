@@ -25,7 +25,7 @@ public class ListValueConstraintValidator implements ConstraintValidator<ListVal
 
     /**
      * 校验逻辑
-     * @param value 需要校验的值
+     * @param value   需要校验的值
      * @param context 上下文
      * @return
      */

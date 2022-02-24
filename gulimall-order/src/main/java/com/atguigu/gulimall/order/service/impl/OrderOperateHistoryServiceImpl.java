@@ -9,7 +9,7 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 
 import com.atguigu.gulimall.order.dao.OrderOperateHistoryDao;
-import com.atguigu.gulimall.order.entity.OrderOperateHistoryEntity;
+import com.atguigu.common.entity.order.OrderOperateHistoryEntity;
 import com.atguigu.gulimall.order.service.OrderOperateHistoryService;
 
 

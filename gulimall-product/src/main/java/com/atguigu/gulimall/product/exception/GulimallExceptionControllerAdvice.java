@@ -12,14 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@RestControllerAdvice(basePackages = "com.atguigu.gulimall.product.app")
+@RestControllerAdvice(basePackages = "com.atguigu.gulimall.product.controller")
 public class GulimallExceptionControllerAdvice {
 
     /**
      * 统一处理异常，可以使用Exception.class先打印一下异常类型来确定具体异常
-     *
-     * @param e
-     * @return
      */
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public R handleValidException(MethodArgumentNotValidException e) {
@@ -31,12 +28,13 @@ public class GulimallExceptionControllerAdvice {
             // 获取错误的属性名字 + 获取到错误提示FieldError
             errorMap.put(item.getField(), item.getDefaultMessage());
         });
-        return R.ok().error(BizCodeEnume.VALID_EXCEPTION.getCode(),BizCodeEnume.VALID_EXCEPTION.getMsg()).put("data", errorMap);
+        return R.ok().error(BizCodeEnume.VALID_EXCEPTION.getCode(), BizCodeEnume.VALID_EXCEPTION.getMsg()).put("data", errorMap);
     }
 
-//    @ExceptionHandler(value = Throwable.class)
-//    public R handleValidException(Throwable throwable) {
-//        log.error("Throwable错误，未处理：" + throwable);
-//        return R.ok().error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
-//    }
+    @ExceptionHandler(value = Throwable.class)
+    public R handleValidException(Throwable throwable) {
+        log.error("Throwable错误，未处理：" + throwable);
+        return R.ok().error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
+    }
+
 }

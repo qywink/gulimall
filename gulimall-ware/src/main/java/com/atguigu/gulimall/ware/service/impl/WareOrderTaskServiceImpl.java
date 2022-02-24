@@ -1,16 +1,16 @@
 package com.atguigu.gulimall.ware.service.impl;
 
-import com.atguigu.common.utils.PageUtils;
-import com.atguigu.common.utils.Query;
-import com.atguigu.gulimall.ware.dao.WareOrderTaskDao;
-import com.atguigu.gulimall.ware.entity.WareOrderTaskEntity;
-import com.atguigu.gulimall.ware.service.WareOrderTaskService;
+import org.springframework.stereotype.Service;
+import java.util.Map;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.stereotype.Service;
+import com.atguigu.common.utils.PageUtils;
+import com.atguigu.common.utils.Query;
 
-import java.util.Map;
+import com.atguigu.gulimall.ware.dao.WareOrderTaskDao;
+import com.atguigu.gulimall.ware.entity.WareOrderTaskEntity;
+import com.atguigu.gulimall.ware.service.WareOrderTaskService;
 
 
 @Service("wareOrderTaskService")
@@ -26,12 +26,12 @@ public class WareOrderTaskServiceImpl extends ServiceImpl<WareOrderTaskDao, Ware
         return new PageUtils(page);
     }
 
+    /**
+     * 根据订单号查询库存锁定工作单
+     */
     @Override
     public WareOrderTaskEntity getOrderTaskByOrderSn(String orderSn) {
-
-        WareOrderTaskEntity orderTaskEntity = this.baseMapper.selectOne(
-                new QueryWrapper<WareOrderTaskEntity>().eq("order_sn", orderSn));
-
-        return orderTaskEntity;
+        return getOne(new QueryWrapper<WareOrderTaskEntity>().eq("order_sn", orderSn));
     }
+
 }

@@ -3,7 +3,7 @@ package com.atguigu.gulimall.product.service.impl;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.SpuImagesDao;
-import com.atguigu.gulimall.product.entity.SpuImagesEntity;
+import com.atguigu.common.entity.product.SpuImagesEntity;
 import com.atguigu.gulimall.product.service.SpuImagesService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -29,17 +29,17 @@ public class SpuImagesServiceImpl extends ServiceImpl<SpuImagesDao, SpuImagesEnt
         return new PageUtils(page);
     }
 
+    /**
+     * 新增商品图片
+     */
     @Override
-    public void saveImages(Long id, List<String> images) {
-        if (CollectionUtils.isEmpty(images)) {
-
-        }else {
+    public void saveSpuImages(Long spuId, List<String> images) {
+        if (!CollectionUtils.isEmpty(images)) {
             List<SpuImagesEntity> collect = images.stream().map(img -> {
-                SpuImagesEntity spuImagesEntity = new SpuImagesEntity();
-                spuImagesEntity.setSpuId(id);
-                spuImagesEntity.setImgUrl(img);
-
-                return spuImagesEntity;
+                SpuImagesEntity spuImages = new SpuImagesEntity();
+                spuImages.setSpuId(spuId);
+                spuImages.setImgUrl(img);
+                return spuImages;
             }).collect(Collectors.toList());
             this.saveBatch(collect);
         }

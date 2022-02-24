@@ -1,5 +1,6 @@
 package com.atguigu.gulimall.member.service.impl;
 
+import com.atguigu.common.constant.ObjectConstant;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -24,6 +25,14 @@ public class MemberLevelServiceImpl extends ServiceImpl<MemberLevelDao, MemberLe
         );
 
         return new PageUtils(page);
+    }
+
+    /**
+     * 查询默认等级
+     */
+    @Override
+    public MemberLevelEntity getDefaultLevel() {
+        return baseMapper.selectOne(new QueryWrapper<MemberLevelEntity>().eq("default_status", ObjectConstant.BooleanIntEnum.YES.getCode()));
     }
 
 }

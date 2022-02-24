@@ -1,82 +1,81 @@
 package com.atguigu.gulimall.product;
 
+import com.atguigu.common.entity.product.BrandEntity;
+import com.atguigu.common.vo.product.SkuItemSaleAttrVO;
+import com.atguigu.common.vo.product.SpuItemAttrGroupVO;
+import com.atguigu.gulimall.product.service.BrandService;
+import com.atguigu.gulimall.product.service.CategoryService;
+import com.atguigu.gulimall.product.service.impl.AttrGroupServiceImpl;
+import com.atguigu.gulimall.product.service.impl.SkuSaleAttrValueServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @SpringBootTest
 class GulimallProductApplicationTests {
-//    @Autowired
-//    RedissonClient redissonClient;
+
+    @Autowired
+    BrandService brandService;
+    @Autowired
+    CategoryService categoryService;
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    RedissonClient redissonClient;
+    @Autowired
+    AttrGroupServiceImpl attrGroupService;
+    @Autowired
+    SkuSaleAttrValueServiceImpl skuSaleAttrValueService;
 //
-//    @Autowired
-//    BrandService brandService;
+//    /**
+//     * 获取spu下的所有销售属性组合
+//     */
+//    @Test
+//    void testGetSaleAttrBySpuId() {
+//        List<SkuItemSaleAttrVO> res = skuSaleAttrValueService.getSaleAttrBySpuId(13l);
+//        System.out.println(res.size());
+//    }
 //
-////    @Autowired
-////    OSSClient ossClient;
-//
-//    @Autowired
-//    private CategoryService categoryService;
-//
-//    @Autowired
-//    StringRedisTemplate redisTemplate;
-//
-//    @Autowired
-//    AttrGroupDao attrGroupDao;
-//
+//    /**
+//     * 测试查询当前spu对应的所有属性的分组信息以及当前分组下的所有属性对应的值
+//     */
 //    @Test
 //    void testGetAttrGroupWithAttrsBySpuId() {
-//        attrGroupDao.getAttrGroupWithAttrsBySpuId(4L, 225L).forEach(item->
-//                System.out.println(item));
+//        List<SpuItemAttrGroupVO> attrs = attrGroupService.getAttrGroupWithAttrsBySpuId(13l, 225l);
+//        System.out.println(attrs.size());
 //    }
 //
-//
+//    /**
+//     * 测试redisClient是否注入成功
+//     */
 //    @Test
-//    void testRedisson() {
-//
+//    void testRedisClient() {
 //        System.out.println(redissonClient);
-//
 //    }
 //
+//    /**
+//     * 测试redis
+//     */
 //    @Test
 //    void testRedis() {
-//        ValueOperations<String, String> ops = redisTemplate.opsForValue();
-//        // 保存
-//        ops.set("hello", "world_" + UUID.randomUUID().toString());
-//        // 查询
-//        String hello = ops.get("hello");
-//        System.out.println(hello);
+//        // 获取操作对象
+//        ValueOperations<String, String> ops = stringRedisTemplate.opsForValue();
 //
-//    }
+//        // 存储
+//        ops.set("hello", "world" + UUID.randomUUID());
 //
-//
-//
-//
-//    @Test
-//    void testCategoryPath() {
-//        log.info("完整路径：{}", Arrays.asList(categoryService.findCatelogId(225L)));
-//    }
-//
-//
-//    @Test
-//    void testUpload() throws FileNotFoundException {
-//        // Endpoint以杭州为例，其它Region请按实际情况填写。
-//        String endpoint = "oss-cn-shanghai.aliyuncs.com";
-//        // 云账号AccessKey有所有API访问权限，建议遵循阿里云安全最佳实践，创建并使用RAM子账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建。
-//        String accessKeyId = "XXX";
-//        String accessKeySecret = "XXX";
-//
-//        // 创建OSSClient实例。
-//        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
-//
-//        // 上传文件流。
-//        InputStream inputStream = new FileInputStream("C:\\Users\\Administrator\\Desktop\\product-mapping.txt");
-//        ossClient.putObject("gulimall-wan", "product-mapping.txt", inputStream);
-//
-//        // 关闭OSSClient。
-//        ossClient.shutdown();
-//
-//        System.out.println("上传成功");
+//        // 获取
+//        System.out.println(ops.get("hello"));
 //    }
 //
 //    @Test
@@ -87,22 +86,22 @@ class GulimallProductApplicationTests {
 //        System.out.println("保存成功：" + save);
 //    }
 //
-//    @Test
-//    void update() {
-//        BrandEntity entity = new BrandEntity();
-//        entity.setBrandId(1L);
-//        entity.setName("小米");
-//        boolean save = brandService.updateById(entity);
-//        System.out.println("xiugai成功：" + save);
-//    }
-//
+//    // 查询条件Wrapper，brand_id = 1的，链式编程拼接多个条件
 //    @Test
 //    void queryPage() {
 //        //brandService.queryPage()
-//        List<BrandEntity> list = brandService.list(new QueryWrapper<BrandEntity>().eq("brand_id", 1L));
-//        list.forEach((item) -> {
+//        List<BrandEntity> list = brandService.list(new QueryWrapper<BrandEntity>().eq("name", "华为"));
+//        list.forEach((item)->{
 //            System.out.println(item);
 //        });
 //    }
+//
+//    // 测试查询父路径
+//    @Test
+//    void findCatelogPath() {
+//        log.info("查询父路径{}" + Arrays.toString(categoryService.findCatelogPath(225L)));
+//    }
+//
+//
 
 }

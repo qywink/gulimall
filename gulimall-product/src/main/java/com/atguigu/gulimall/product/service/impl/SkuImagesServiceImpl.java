@@ -1,9 +1,9 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.atguigu.common.entity.product.SkuImagesEntity;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.SkuImagesDao;
-import com.atguigu.gulimall.product.entity.SkuImagesEntity;
 import com.atguigu.gulimall.product.service.SkuImagesService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -27,10 +27,11 @@ public class SkuImagesServiceImpl extends ServiceImpl<SkuImagesDao, SkuImagesEnt
         return new PageUtils(page);
     }
 
+    /**
+     * 查询sku图片信息
+     */
     @Override
     public List<SkuImagesEntity> getImagesBySkuId(Long skuId) {
-
-        List<SkuImagesEntity> imagesEntities = baseMapper.selectList(new QueryWrapper<SkuImagesEntity>().eq("sku_id", skuId));
-        return imagesEntities;
+        return baseMapper.selectList(new QueryWrapper<SkuImagesEntity>().eq("sku_id", skuId));
     }
 }

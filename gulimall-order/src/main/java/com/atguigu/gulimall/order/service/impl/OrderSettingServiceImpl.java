@@ -9,7 +9,7 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 
 import com.atguigu.gulimall.order.dao.OrderSettingDao;
-import com.atguigu.gulimall.order.entity.OrderSettingEntity;
+import com.atguigu.common.entity.order.OrderSettingEntity;
 import com.atguigu.gulimall.order.service.OrderSettingService;
 
 

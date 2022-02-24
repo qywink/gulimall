@@ -11,12 +11,15 @@ import java.util.Map;
  *
  * @author wanzenghui
  * @email lemon_wan@aliyun.com
- * @date 2020-08-02 15:37:46
+ * @date 2021-09-02 22:59:35
  */
 public interface WareOrderTaskService extends IService<WareOrderTaskEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
 
+    /**
+     * 根据订单号查询库存锁定工作单
+     */
     WareOrderTaskEntity getOrderTaskByOrderSn(String orderSn);
 }
 

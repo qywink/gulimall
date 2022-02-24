@@ -9,12 +9,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class GulimallWebConfig implements WebMvcConfigurer {
 
     /**
-     * 视图映射:发送一个请求，直接跳转到一个页面
+     * 视图映射：请求映射视图
+     * 使用GET请求访问
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-
-        // registry.addViewController("/login.html").setViewName("login");
         registry.addViewController("/reg.html").setViewName("reg");
     }
 }
