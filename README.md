@@ -21,7 +21,7 @@ gulimall
 问题汇总：
     1、查看笔记图片无法显示的问题，请将笔记与assets文件夹放在同一目录
     2、db文件夹是建库建表语句
-    3、项目拉取后不可直接运行，请先根据环境搭建.md搭建好运行环境，例如nacos、redis、mysql、rabbitmq等等
+    3、项目拉取后不可直接运行，请先根据《环境搭建.md》搭建好运行环境，例如nacos、redis、mysql、rabbitmq等等
 ```
 
 欢迎大家提出问题，也期待大家的star
