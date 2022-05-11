@@ -1,4 +1,4 @@
-```
+```properties
 谷粒商城是尚硅谷雷丰阳老师教学的一套B2C商城项目，项目由业务集群系统+后台管理系统构成，打通了分布式开发及全栈开发技能，包含前后分离全栈开发、Restful接口、数据校验、网关、注册发现、配置中心、熔断、限流、降级、链路追踪、性能监控、压力测试、系统预警、集群部署、持续集成、持续部署等
 项目结构：
 gulimall
@@ -7,16 +7,16 @@ gulimall
 ├── renren-fast -- 后台管理系统（人人开源项目）
 ├── renren-fast-vue -- 后台管理前端系统（人人开源项目）
 ├── gulimall-auth-server -- 认证中心（社交登录、OAuth2.0、单点登录）
-├── gulimall-cart -- 购物车服务
-├── gulimall-coupon -- 优惠卷服务
-├── gulimall-member -- 会员服务
-├── gulimall-gateway -- 网关服务
-├── gulimall-order -- 订单服务
-├── gulimall-product -- 商品服务
-├── gulimall-search -- 检索服务
-├── gulimall-seckill -- 秒杀服务
-├── gulimall-third-party -- 第三方服务
-└── gulimall-ware -- 仓储服务
+├── gulimall-cart -- 购物车模块
+├── gulimall-coupon -- 优惠券模块
+├── gulimall-member -- 会员模块
+├── gulimall-gateway -- 网关模块
+├── gulimall-order -- 订单模块
+├── gulimall-product -- 商品模块
+├── gulimall-search -- 检索模块
+├── gulimall-seckill -- 秒杀模块
+├── gulimall-third-party -- 第三方模块（短信、OSS）
+└── gulimall-ware -- 仓储模块
 
 问题汇总：
     1、项目拉取后无法直接运行，请先根据《环境搭建.md》搭建好运行环境，例如nacos、redis、mysql、rabbitmq等等
