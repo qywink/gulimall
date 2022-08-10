@@ -36,6 +36,17 @@ class GulimallProductApplicationTests {
     AttrGroupServiceImpl attrGroupService;
     @Autowired
     SkuSaleAttrValueServiceImpl skuSaleAttrValueService;
+
+    @Test
+    void testRegix() {
+
+
+        String regx = "/^(?i)use.*/gi";
+        System.out.println("use database".matches(regx));
+
+
+    }
+
 //
 //    /**
 //     * 获取spu下的所有销售属性组合

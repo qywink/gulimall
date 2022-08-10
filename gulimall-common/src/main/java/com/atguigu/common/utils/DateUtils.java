@@ -464,8 +464,9 @@ public class DateUtils {
         }
 
         public static Object toDate(Class type, Object value) {
-            if (value == null || "".equals(value))
+            if (value == null || "".equals(value)) {
                 return null;
+            }
             if (value instanceof String) {
                 String dateValue = value.toString().trim();
                 int length = dateValue.length();

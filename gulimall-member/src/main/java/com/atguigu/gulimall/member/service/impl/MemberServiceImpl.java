@@ -89,8 +89,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberDao, MemberEntity> impl
     public void checkPhoneUnique(String phone) throws PhoneException {
         Integer count = baseMapper.selectCount(new QueryWrapper<MemberEntity>()
                 .eq("mobile", phone));
-        if (count > 0)
+        if (count > 0) {
             throw new PhoneException();
+        }
     }
 
     /**
@@ -99,8 +100,9 @@ public class MemberServiceImpl extends ServiceImpl<MemberDao, MemberEntity> impl
     public void checkUserNameUnique(String userName) throws UsernameException {
         Integer count = baseMapper.selectCount(new QueryWrapper<MemberEntity>()
                 .eq("username", userName));
-        if (count > 0)
+        if (count > 0) {
             throw new UsernameException();
+        }
     }
 
     /**

@@ -240,8 +240,9 @@ public class ObjectUtil {
      * BeanMerge，对象属性合并【非null属性不拷贝】
      */
     public static <M> void merge(M source, M target) throws Exception {
-        if (source == null)
+        if (source == null) {
             return;
+        }
         //获取目标bean
         BeanInfo beanInfo = Introspector.getBeanInfo(source.getClass());
         // 遍历所有属性

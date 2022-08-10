@@ -18,8 +18,9 @@ public class ObjectConstant {
 
         public static boolean isValid(Integer code) {
             for (BooleanIntEnum obj : values()) {
-                if (obj.code.equals(code))
+                if (obj.code.equals(code)) {
                     return true;
+                }
             }
             return false;
         }

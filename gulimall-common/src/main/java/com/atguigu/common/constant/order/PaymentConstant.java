@@ -40,18 +40,21 @@ public class PaymentConstant {
 
         public static PayType getByCode(Integer code) {
             for (PayType em : values()) {
-                if (em.getCode().equals(code))
+                if (em.getCode().equals(code)) {
                     return em;
+                }
             }
             return null;
         }
 
         public static boolean isValid(Integer code) {
-            if (code == null)
+            if (code == null) {
                 return false;
+            }
             for (PayType type : values()) {
-                if (type.code.equals(code))
+                if (type.code.equals(code)) {
                     return true;
+                }
             }
             return false;
         }

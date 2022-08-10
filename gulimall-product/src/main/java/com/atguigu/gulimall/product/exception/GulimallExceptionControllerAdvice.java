@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author Administrator
+ */
 @Slf4j
 @RestControllerAdvice(basePackages = "com.atguigu.gulimall.product.controller")
 public class GulimallExceptionControllerAdvice {
@@ -22,19 +25,18 @@ public class GulimallExceptionControllerAdvice {
     public R handleValidException(MethodArgumentNotValidException e) {
         log.error("数据校验出现问题{}, 异常类型:{}", e.getMessage(), e.getClass());
         BindingResult result = e.getBindingResult();
-        Map<String, String> errorMap = new HashMap<>();
+        Map<String, String> errorMap = new HashMap<>(16);
         // 获取校验的错误结果
         result.getFieldErrors().forEach((item) -> {
             // 获取错误的属性名字 + 获取到错误提示FieldError
             errorMap.put(item.getField(), item.getDefaultMessage());
         });
-        return R.ok().error(BizCodeEnume.VALID_EXCEPTION.getCode(), BizCodeEnume.VALID_EXCEPTION.getMsg()).put("data", errorMap);
+        return R.error(BizCodeEnume.VALID_EXCEPTION.getCode(), BizCodeEnume.VALID_EXCEPTION.getMsg()).put("data", errorMap);
     }
 
     @ExceptionHandler(value = Throwable.class)
     public R handleValidException(Throwable throwable) {
         log.error("Throwable错误，未处理：" + throwable);
-        return R.ok().error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
+        return R.error(BizCodeEnume.UNKNOW_EXCEPTION.getCode(), BizCodeEnume.UNKNOW_EXCEPTION.getMsg());
     }
-
 }

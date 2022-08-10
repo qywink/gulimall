@@ -178,8 +178,9 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return attr.getAttrId();
         }).collect(Collectors.toList());
         // 根据id查询基本属性集合
-        if (CollectionUtils.isEmpty(attrIds))
+        if (CollectionUtils.isEmpty(attrIds)) {
             return new ArrayList<>();
+        }
         // 非空查询返回
         List<AttrEntity> attrEntities = this.listByIds(attrIds);
         return attrEntities;

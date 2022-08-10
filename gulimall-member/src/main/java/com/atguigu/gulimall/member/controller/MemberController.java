@@ -123,8 +123,9 @@ public class MemberController {
     public R login(@RequestBody MemberUserLoginTO user) {
         try {
             MemberEntity entity = memberService.login(user);
-            if (entity == null)
+            if (entity == null) {
                 return R.error(BizCodeEnume.LOGINACCT_PASSWORD_EXCEPTION);
+            }
             return R.ok().setData(entity);
         } catch (Exception ex) {
             return R.error(ex.getMessage());
